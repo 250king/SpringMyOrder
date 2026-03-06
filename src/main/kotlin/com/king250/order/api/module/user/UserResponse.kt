@@ -13,7 +13,10 @@ data class UserResponse(
     val qq: String,
 
     @JsonProperty("email")
-    val email: String,
+    val email: String?,
+
+    @JsonProperty("credit_score")
+    val creditScore: Int,
 
     @JsonProperty("created_at")
     val createdAt: String,

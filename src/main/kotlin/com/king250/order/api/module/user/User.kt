@@ -6,12 +6,14 @@ import jakarta.persistence.EntityListeners
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
+import jakarta.persistence.Table
 import org.hibernate.annotations.SQLDelete
 import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.annotation.LastModifiedDate
 import org.springframework.data.jpa.domain.support.AuditingEntityListener
 import java.time.LocalDateTime
 
+@Table(name = "\"user\"")
 @Entity
 @EntityListeners(AuditingEntityListener::class)
 @SQLDelete(sql = "UPDATE \"user\" SET name = '已注销_' || left(md5(name), 8), email = NULL, qq = MD5(qq), deleted_at = NOW() WHERE id = ?")
