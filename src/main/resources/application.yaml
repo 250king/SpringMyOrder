@@ -1,0 +1,13 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/SpringMyOrder}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:0d000721}
+    driver-class-name: org.postgresql.Driver
+  application:
+    name: SpringMyOrder
