@@ -1,33 +1,39 @@
-package com.king250.order.api.module.item
+package com.king250.order.api.order
 
-import com.king250.order.api.module.group.Group
-import com.king250.order.api.module.user.User
+import com.king250.order.api.item.Item
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.EntityListeners
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import org.hibernate.annotations.JdbcType
+import org.hibernate.dialect.type.PostgreSQLEnumJdbcType
 import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.annotation.LastModifiedDate
+import org.springframework.data.jpa.domain.support.AuditingEntityListener
 import java.math.BigDecimal
 import java.time.LocalDateTime
 
 @Entity
-data class Item(
+@EntityListeners(AuditingEntityListener::class)
+data class Order(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id: Long,
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "group_id")
-    var group: Group,
+    @JoinColumn(name = "user_id")
+    var user: User,
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "creator_id")
-    var creator: User,
+    @JoinColumn(name = "item_id")
+    var item: Item?,
 
     var name: String,
 
@@ -39,7 +45,11 @@ data class Item(
 
     var weight: Int? = null,
 
-    var isAllowed: Boolean = true,
+    var quantity: Int = 1,
+
+    @Enumerated(EnumType.STRING)
+    @JdbcType(PostgreSQLEnumJdbcType::class)
+    var status: OrderStatus = OrderStatus.PENDING,
 
     @CreatedDate
     @Column(updatable = false)

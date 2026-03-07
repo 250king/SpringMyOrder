@@ -1,4 +1,4 @@
-package com.king250.order.api.module.group
+package com.king250.order.api.group
 
 enum class Role {
     OWNER,

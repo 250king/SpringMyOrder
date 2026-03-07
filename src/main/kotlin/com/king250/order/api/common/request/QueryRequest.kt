@@ -2,6 +2,8 @@ package com.king250.order.api.common.request
 
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
+import org.jooq.SortField
+import org.jooq.Table
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.data.domain.Sort.Direction
