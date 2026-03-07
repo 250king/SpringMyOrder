@@ -1,22 +1,16 @@
 package com.king250.order.api.module.user
 
-import org.mapstruct.Mapper
-import org.mapstruct.Mapping
-import org.mapstruct.MappingConstants
-import org.mapstruct.Mappings
+import com.king250.order.api.common.annotation.Mapper
+import com.king250.order.jooq.tables.records.UserRecord
+import org.mapstruct.MappingTarget
 
-@Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
+@Mapper
 interface UserMapper {
-    fun toResponseList(users: List<User>): List<UserResponse>
+    fun toResponseList(users: List<UserRecord>): List<UserResponse>
 
-    fun toResponse(user: User): UserResponse
+    fun toResponse(user: UserRecord): UserResponse
 
-    @Mappings(
-        Mapping(target = "id", ignore = true),
-        Mapping(target = "creditScore", ignore = true),
-        Mapping(target = "createdAt", ignore = true),
-        Mapping(target = "updatedAt", ignore = true),
-        Mapping(target = "deletedAt", ignore = true)
-    )
-    fun toEntity(request: UserCreateRequest): User
+    fun toEntity(request: UserCreateRequest): UserRecord
+
+    fun updateEntity(request: UserUpdateRequest, @MappingTarget user: UserRecord): UserRecord
 }

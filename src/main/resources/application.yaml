@@ -1,7 +1,6 @@
 spring:
-  jpa:
-    hibernate:
-      ddl-auto: validate
+  jackson:
+    property-naming-strategy: SNAKE_CASE
   flyway:
     enabled: true
   datasource:

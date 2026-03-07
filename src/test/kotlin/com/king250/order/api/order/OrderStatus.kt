@@ -1,4 +1,4 @@
-package com.king250.order.api.module.order
+package com.king250.order.api.order
 
 enum class OrderStatus {
     PENDING,

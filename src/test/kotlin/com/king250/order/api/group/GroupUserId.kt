@@ -1,4 +1,4 @@
-package com.king250.order.api.module.group
+package com.king250.order.api.group
 
 import java.io.Serializable
 

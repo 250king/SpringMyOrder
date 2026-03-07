@@ -1,4 +1,4 @@
-package com.king250.order.api.module.cart
+package com.king250.order.api.cart
 
 import java.io.Serializable
 
