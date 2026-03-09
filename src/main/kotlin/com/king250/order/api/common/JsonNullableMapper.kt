@@ -1,4 +1,4 @@
-package com.king250.order.api.common.mapper
+package com.king250.order.api.common
 
 import org.mapstruct.Condition
 import org.mapstruct.Mapper

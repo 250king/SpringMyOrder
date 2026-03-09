@@ -1,6 +1,6 @@
 package com.king250.order.api.module.address
 
-import com.king250.order.api.common.util.toJooq
+import com.king250.order.api.util.toJooq
 import com.king250.order.jooq.tables.records.AddressRecord
 import com.king250.order.jooq.tables.references.ADDRESS
 import org.jooq.Condition
@@ -21,6 +21,9 @@ class AddressService(
         val conditions = mutableListOf<Condition>()
         request.id?.let {
             conditions.add(ADDRESS.ID.eq(it))
+        }
+        request.userId?.let {
+            conditions.add(ADDRESS.USER_ID.eq(it))
         }
         request.keyword?.takeIf { it.isNotBlank() }?.let { kw ->
             conditions.add(ADDRESS.NAME.containsIgnoreCase(kw)
@@ -50,7 +53,7 @@ class AddressService(
             if (address.id == null) {
                 return dsl.insertInto(ADDRESS)
                     .set(address)
-                    .returning(ADDRESS.ID)
+                    .returning()
                     .fetchOne()!!
             } else {
                 dsl.attach(address)
@@ -58,7 +61,7 @@ class AddressService(
                 return address
             }
         } catch (_: DataIntegrityViolationException) {
-            throw ResponseStatusException(HttpStatus.BAD_REQUEST)
+            throw ResponseStatusException(HttpStatus.CONFLICT)
         }
     }
 

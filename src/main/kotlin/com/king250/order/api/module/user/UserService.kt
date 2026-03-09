@@ -1,17 +1,12 @@
 package com.king250.order.api.module.user
 
-import com.king250.order.api.common.util.toJooq
+import com.king250.order.api.util.toJooq
 import com.king250.order.jooq.tables.records.UserRecord
 import com.king250.order.jooq.tables.references.USER
 import org.jooq.Condition
 import org.jooq.DSLContext
-import org.jooq.impl.DSL.castNull
-import org.jooq.impl.DSL.concat
-import org.jooq.impl.DSL.left
-import org.jooq.impl.DSL.md5
-import org.jooq.impl.DSL.currentInstant
-import org.jooq.impl.DSL.`val`
-import org.springframework.dao.DuplicateKeyException
+import org.jooq.impl.DSL.*
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.domain.PageImpl
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -67,7 +62,7 @@ class UserService(
                 user.store()
                 return user
             }
-        } catch (_: DuplicateKeyException) {
+        } catch (_: DataIntegrityViolationException) {
             throw ResponseStatusException(HttpStatus.CONFLICT)
         }
     }
@@ -83,7 +78,7 @@ class UserService(
                 .where(USER.ID.eq(id))
                 .execute()
         } else {
-            throw ResponseStatusException(HttpStatus.NOT_FOUND, "User with id $id not found")
+            throw ResponseStatusException(HttpStatus.NOT_FOUND)
         }
     }
 }

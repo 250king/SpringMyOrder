@@ -1,15 +1,13 @@
-package com.king250.order.api.common.annotation
+package com.king250.order.api.config
 
-import com.king250.order.api.common.mapper.JsonNullableMapper
-import org.mapstruct.Mapper as MapStructMapper
+import com.king250.order.api.common.JsonNullableMapper
+import org.mapstruct.MapperConfig as MapStructMapperConfig
 import org.mapstruct.MappingConstants
 import org.mapstruct.NullValuePropertyMappingStrategy
 
-@Target(AnnotationTarget.CLASS)
-@Retention(AnnotationRetention.SOURCE)
-@MapStructMapper(
+@MapStructMapperConfig(
     componentModel = MappingConstants.ComponentModel.SPRING,
     uses = [JsonNullableMapper::class],
     nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
 )
-annotation class Mapper
+interface MapperConfig

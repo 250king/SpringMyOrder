@@ -1,4 +1,4 @@
-package com.king250.order.api.common.util
+package com.king250.order.api.util
 
 import org.jooq.SortField
 import org.jooq.Table

@@ -1,4 +1,4 @@
-package com.king250.order.api.common.response
+package com.king250.order.api.common
 
 data class ItemResponse<T>(
     val items: List<T>,

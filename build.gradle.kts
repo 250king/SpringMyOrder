@@ -69,7 +69,7 @@ jooq {
     configuration {
         jdbc {
             url = project.property("db_url") as String
-            user = project.property("db_user") as String
+            user = project.property("db_username") as String
             password = project.property("db_password") as String
         }
         generator {
@@ -94,7 +94,7 @@ jooq {
 
 flyway {
     url = project.property("db_url") as String
-    user = project.property("db_user") as String
+    user = project.property("db_username") as String
     password = project.property("db_password") as String
 }
 

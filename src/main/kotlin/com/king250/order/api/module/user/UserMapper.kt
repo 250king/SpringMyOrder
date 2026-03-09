@@ -1,10 +1,11 @@
 package com.king250.order.api.module.user
 
-import com.king250.order.api.common.annotation.Mapper
+import com.king250.order.api.config.MapperConfig
 import com.king250.order.jooq.tables.records.UserRecord
+import org.mapstruct.Mapper
 import org.mapstruct.MappingTarget
 
-@Mapper
+@Mapper(config = MapperConfig::class)
 interface UserMapper {
     fun toResponseList(users: List<UserRecord>): List<UserResponse>
 

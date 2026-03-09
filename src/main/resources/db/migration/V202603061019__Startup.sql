@@ -35,7 +35,8 @@ CREATE TABLE address
     name    VARCHAR(20) NOT NULL,
     phone   VARCHAR(11) NOT NULL,
     address TEXT        NOT NULL,
-    CONSTRAINT fk_address_user FOREIGN KEY (user_id) REFERENCES "user" (id) ON DELETE CASCADE
+    CONSTRAINT fk_address_user FOREIGN KEY (user_id) REFERENCES "user" (id) ON DELETE CASCADE,
+    UNIQUE (user_id, name, phone, address)
 );
 
 CREATE TABLE group_user
