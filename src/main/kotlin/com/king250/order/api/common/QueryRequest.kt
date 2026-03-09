@@ -33,7 +33,7 @@ open class QueryRequest(
                 Sort.by(direction, sort)
             )
         } catch (e: IllegalArgumentException) {
-            throw ResponseStatusException(HttpStatus.NOT_FOUND, e.message)
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, e.message)
         }
     }
 }

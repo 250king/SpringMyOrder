@@ -8,12 +8,12 @@ import jakarta.validation.constraints.Pattern
 data class UserCreateRequest(
     @field:NotBlank
     @field:Size(min = 1, max = 20)
-    var name: String,
+    val name: String,
 
     @field:NotBlank
     @field:Pattern(regexp = "^[0-9]*$", message = "QQ must be numeric")
-    var qq: String,
+    val qq: String,
 
     @field:Email
-    var email: String? = null
+    val email: String? = null
 )

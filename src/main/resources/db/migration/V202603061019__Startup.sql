@@ -23,6 +23,7 @@ CREATE TABLE "group"
     name       VARCHAR(20)  NOT NULL UNIQUE,
     qq         VARCHAR(20)  NOT NULL UNIQUE,
     status     group_status NOT NULL DEFAULT 'OPENING',
+    deadline   TIMESTAMPTZ  NOT NULL DEFAULT (CURRENT_TIMESTAMP + INTERVAL '7 days'),
     created_at TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_group_user FOREIGN KEY (owner_id) REFERENCES "user" (id) ON DELETE NO ACTION
@@ -45,8 +46,8 @@ CREATE TABLE group_user
     group_id   BIGINT      NOT NULL,
     role       "role"      NOT NULL DEFAULT 'MEMBER',
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_group_user_user FOREIGN KEY (user_id) REFERENCES "user" (id) ON DELETE CASCADE,
-    CONSTRAINT fk_group_user_group FOREIGN KEY (group_id) REFERENCES "group" (id) ON DELETE CASCADE,
+    CONSTRAINT fk_group_user_user FOREIGN KEY (user_id) REFERENCES "user" (id) ON DELETE NO ACTION,
+    CONSTRAINT fk_group_user_group FOREIGN KEY (group_id) REFERENCES "group" (id) ON DELETE NO ACTION,
     PRIMARY KEY (user_id, group_id)
 );
 
@@ -95,6 +96,6 @@ CREATE TABLE "order"
     status     order_status   NOT NULL DEFAULT 'PENDING',
     created_at TIMESTAMPTZ    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_order_user FOREIGN KEY (user_id) REFERENCES "user" (id) ON DELETE CASCADE,
+    CONSTRAINT fk_order_user FOREIGN KEY (user_id) REFERENCES "user" (id) ON DELETE NO ACTION ,
     CONSTRAINT fk_order_item FOREIGN KEY (item_id) REFERENCES item (id) ON DELETE SET NULL
 )

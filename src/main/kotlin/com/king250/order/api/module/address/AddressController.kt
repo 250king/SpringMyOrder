@@ -18,7 +18,7 @@ class AddressController(
     @GetMapping("/addresses")
     fun getAddresses(@Valid request: AddressQueryRequest): ItemResponse<AddressResponse> {
         val addresses = service.findAll(request)
-        return ItemResponse(mapper.toResponseList(addresses.content), addresses.totalElements)
+        return ItemResponse.fromPage(addresses, mapper::toResponse)
     }
 
     @PostMapping("/addresses")

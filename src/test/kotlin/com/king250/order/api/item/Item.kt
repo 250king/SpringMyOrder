@@ -1,6 +1,5 @@
 package com.king250.order.api.item
 
-import com.king250.order.api.group.Group
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType

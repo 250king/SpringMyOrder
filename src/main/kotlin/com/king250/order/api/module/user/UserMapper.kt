@@ -7,8 +7,6 @@ import org.mapstruct.MappingTarget
 
 @Mapper(config = MapperConfig::class)
 interface UserMapper {
-    fun toResponseList(users: List<UserRecord>): List<UserResponse>
-
     fun toResponse(user: UserRecord): UserResponse
 
     fun toEntity(request: UserCreateRequest): UserRecord

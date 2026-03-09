@@ -6,6 +6,7 @@ import com.king250.order.jooq.tables.references.ADDRESS
 import org.jooq.Condition
 import org.jooq.DSLContext
 import org.springframework.dao.DataIntegrityViolationException
+import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -16,7 +17,7 @@ import org.springframework.web.server.ResponseStatusException
 class AddressService(
     private val dsl: DSLContext,
 ) {
-    fun findAll(request: AddressQueryRequest): PageImpl<AddressRecord> {
+    fun findAll(request: AddressQueryRequest): Page<AddressRecord> {
         val pageable = request.toPageable()
         val conditions = mutableListOf<Condition>()
         request.id?.let {

@@ -7,8 +7,6 @@ import org.mapstruct.MappingTarget
 
 @Mapper(config = MapperConfig::class)
 interface AddressMapper {
-    fun toResponseList(addresses: List<AddressRecord>): List<AddressResponse>
-
     fun toResponse(address: AddressRecord): AddressResponse
 
     fun toEntity(request: AddressCreateRequest): AddressRecord

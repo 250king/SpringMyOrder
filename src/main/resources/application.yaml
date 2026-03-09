@@ -10,3 +10,7 @@ spring:
     driver-class-name: org.postgresql.Driver
   application:
     name: SpringMyOrder
+
+server:
+  error:
+    include-message: always

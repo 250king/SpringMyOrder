@@ -8,12 +8,12 @@ import org.openapitools.jackson.nullable.JsonNullable
 
 data class UserUpdateRequest(
     @field:Size(min = 1, max = 20)
-    var name: JsonNullable<String> = JsonNullable.undefined(),
+    val name: JsonNullable<String> = JsonNullable.undefined(),
 
     @field:NotNullable
     @field:Pattern(regexp = "^[0-9]*$", message = "QQ must be numeric")
-    var qq: JsonNullable<String> = JsonNullable.undefined(),
+    val qq: JsonNullable<String> = JsonNullable.undefined(),
 
     @field:Email
-    var email: JsonNullable<String> = JsonNullable.undefined()
+    val email: JsonNullable<String> = JsonNullable.undefined()
 )

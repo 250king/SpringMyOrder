@@ -6,7 +6,7 @@ import kotlin.reflect.KClass
 
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.RUNTIME)
-@Constraint(validatedBy = [NotNullValidator::class])
+@Constraint(validatedBy = [NotNullableValidator::class])
 annotation class NotNullable(
     val message: String = "This field cannot be null",
     val groups: Array<KClass<*>> = [],
