@@ -105,10 +105,6 @@ flyway {
     password = project.property("db_password") as String
 }
 
-tasks.withType<KotlinCompile> {
-    dependsOn("jooqCodegen")
-}
-
 tasks.withType<Test> {
     useJUnitPlatform()
 }

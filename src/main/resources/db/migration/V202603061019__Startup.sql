@@ -56,7 +56,7 @@ CREATE TABLE item
     id         BIGSERIAL PRIMARY KEY,
     group_id   BIGINT         NOT NULL,
     creator_id BIGINT         NOT NULL,
-    name       VARCHAR(100)    NOT NULL,
+    name       VARCHAR(100)   NOT NULL,
     url        VARCHAR(2048)  NOT NULL,
     image      VARCHAR(2048),
     price      DECIMAL(10, 2) NOT NULL,
@@ -87,7 +87,7 @@ CREATE TABLE "order"
     id         BIGSERIAL PRIMARY KEY,
     user_id    BIGINT         NOT NULL,
     item_id    BIGINT,
-    name       VARCHAR(100)    NOT NULL,
+    name       VARCHAR(100)   NOT NULL,
     url        VARCHAR(2048)  NOT NULL,
     image      VARCHAR(2048),
     price      DECIMAL(10, 2) NOT NULL,
@@ -96,6 +96,6 @@ CREATE TABLE "order"
     status     order_status   NOT NULL DEFAULT 'PENDING',
     created_at TIMESTAMPTZ    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_order_user FOREIGN KEY (user_id) REFERENCES "user" (id) ON DELETE NO ACTION ,
+    CONSTRAINT fk_order_user FOREIGN KEY (user_id) REFERENCES "user" (id) ON DELETE NO ACTION,
     CONSTRAINT fk_order_item FOREIGN KEY (item_id) REFERENCES item (id) ON DELETE SET NULL
 )

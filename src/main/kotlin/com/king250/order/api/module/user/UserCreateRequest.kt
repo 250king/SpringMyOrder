@@ -15,5 +15,5 @@ data class UserCreateRequest(
     val qq: String,
 
     @field:Email
-    val email: String? = null
+    val email: String?
 )

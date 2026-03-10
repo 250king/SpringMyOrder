@@ -16,7 +16,7 @@ class ExceptionConfig {
     @ExceptionHandler(IntegrityConstraintViolationException::class)
     fun handleJooqIntegrityException(e: IntegrityConstraintViolationException, response: HttpServletResponse) {
         val sqlState = e.sqlState()
-        val (status, userMessage) = when (sqlState) {
+        val (status, message) = when (sqlState) {
             "23505" -> {
                 409 to "The record already exists."
             }
@@ -27,7 +27,7 @@ class ExceptionConfig {
                 400 to "Database integrity violation"
             }
         }
-        response.sendError(status, userMessage)
+        response.sendError(status, message)
     }
 
     @ExceptionHandler(NoDataFoundException::class)
