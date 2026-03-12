@@ -1,6 +1,7 @@
 package com.king250.order.api.module.address
 
 import com.king250.order.api.common.ItemResponse
+import com.king250.order.api.util.toItem
 import jakarta.validation.Valid
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -18,7 +19,7 @@ class AddressController(
     @GetMapping("/addresses")
     fun getAddresses(@Valid request: AddressQueryRequest): ItemResponse<AddressResponse> {
         val addresses = service.findAll(request)
-        return ItemResponse.fromPage(addresses, mapper::toResponse)
+        return addresses.toItem(mapper::toResponse)
     }
 
     @PostMapping("/addresses")

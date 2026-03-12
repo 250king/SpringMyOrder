@@ -4,11 +4,7 @@ import com.king250.order.api.integration.napcat.NapcatService
 import com.king250.order.api.util.toJooq
 import com.king250.order.jooq.tables.records.UserRecord
 import com.king250.order.jooq.tables.references.USER
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import org.jooq.Condition
 import org.jooq.DSLContext
 import org.jooq.exception.NoDataFoundException
@@ -29,17 +25,24 @@ class UserService(
     fun findAll(request: UserQueryRequest): Page<UserRecord> {
         val pageable = request.toPageable()
         val conditions = mutableListOf<Condition>()
-        conditions.add(USER.DELETED_AT.isNull)
+        val sortMap = mapOf(
+            "id" to USER.ID,
+            "name" to USER.NAME,
+            "email" to USER.EMAIL,
+            "credit_score" to USER.CREDIT_SCORE,
+            "created_at" to USER.CREATED_AT
+        )
         request.id?.let {
             conditions.add(USER.ID.eq(it))
         }
         request.keyword?.takeIf { it.isNotBlank() }?.let { kw ->
             conditions.add(USER.NAME.containsIgnoreCase(kw).or(USER.QQ.containsIgnoreCase(kw)))
         }
+        conditions.add(USER.DELETED_AT.isNull)
         val total = dsl.fetchCount(USER, conditions)
         val records = dsl.selectFrom(USER)
             .where(conditions)
-            .orderBy(pageable.sort.toJooq(USER))
+            .orderBy(pageable.sort.toJooq(sortMap))
             .limit(pageable.pageSize)
             .offset(pageable.offset)
             .fetch()

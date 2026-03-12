@@ -35,7 +35,7 @@ class AddressService(
         val total = dsl.fetchCount(ADDRESS, conditions)
         val records = dsl.selectFrom(ADDRESS)
             .where(conditions)
-            .orderBy(pageable.sort.toJooq(ADDRESS))
+            .orderBy(pageable.sort.toJooq(emptyMap()))
             .limit(pageable.pageSize)
             .offset(pageable.offset)
             .fetch()

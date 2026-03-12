@@ -9,20 +9,20 @@ import org.springframework.http.HttpStatus
 import org.springframework.web.server.ResponseStatusException
 
 open class QueryRequest(
-    open var id: Long? = null,
+    var id: Long? = null,
 
-    open var keyword: String? = null,
+    var keyword: String? = null,
 
     @field:Min(value = 1)
-    open var page: Int = 1,
+    var page: Int = 1,
 
     @field:Min(value = 1)
     @field:Max(value = 50)
-    open var size: Int = 10,
+    var size: Int = 10,
 
-    open var sort: String = "id",
+    var sort: String = "id",
 
-    open var order: String = "asc"
+    var order: String = "asc"
 ) {
     fun toPageable(): PageRequest {
         try {

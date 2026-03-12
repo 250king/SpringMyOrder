@@ -5,6 +5,7 @@ import jakarta.validation.ConstraintViolationException
 import org.jooq.exception.IntegrityConstraintViolationException
 import org.jooq.exception.NoDataFoundException
 import org.slf4j.LoggerFactory
+import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.server.ResponseStatusException
@@ -37,6 +38,11 @@ class ExceptionConfig {
 
     @ExceptionHandler(ConstraintViolationException::class)
     fun handleValidationException(e: ConstraintViolationException, response: HttpServletResponse) {
+        response.sendError(400, e.message)
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException::class)
+    fun handleValidationException(e: HttpMessageNotReadableException, response: HttpServletResponse) {
         response.sendError(400, e.message)
     }
 

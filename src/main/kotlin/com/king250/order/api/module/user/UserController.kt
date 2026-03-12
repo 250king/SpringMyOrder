@@ -3,17 +3,11 @@ package com.king250.order.api.module.user
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.king250.order.api.common.ItemResponse
+import com.king250.order.api.util.toItem
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Pattern
 import org.springframework.validation.annotation.Validated
-import org.springframework.web.bind.annotation.DeleteMapping
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PatchMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 
 @RestController
 @Validated
@@ -25,7 +19,7 @@ class UserController(
     @GetMapping("/users")
     fun getUsers(@Valid request: UserQueryRequest): ItemResponse<UserResponse> {
         val users = service.findAll(request)
-        return ItemResponse.fromPage(users, mapper::toResponse)
+        return users.toItem(mapper::toResponse)
     }
 
     @PostMapping("/users")
@@ -37,7 +31,7 @@ class UserController(
     @PostMapping("/users/batch")
     suspend fun batchCreateUsers(@Valid @RequestBody request: UserBatchCreateRequest): ItemResponse<UserResponse> {
         val users = service.batchCreate(request)
-        return ItemResponse.fromPage(users, mapper::toResponse)
+        return users.toItem(mapper::toResponse)
     }
 
     @GetMapping("/users/nickname")

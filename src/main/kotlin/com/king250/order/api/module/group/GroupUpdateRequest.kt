@@ -1,12 +1,13 @@
-package com.king250.order.api.module.user
+package com.king250.order.api.module.group
 
 import com.king250.order.api.common.NotNullable
-import jakarta.validation.constraints.Email
-import jakarta.validation.constraints.Size
+import jakarta.validation.constraints.Future
 import jakarta.validation.constraints.Pattern
+import jakarta.validation.constraints.Size
 import org.openapitools.jackson.nullable.JsonNullable
+import java.time.Instant
 
-data class UserUpdateRequest(
+data class GroupUpdateRequest(
     @field:NotNullable
     @field:Size(min = 1, max = 50)
     val name: JsonNullable<String> = JsonNullable.undefined(),
@@ -15,6 +16,7 @@ data class UserUpdateRequest(
     @field:Pattern(regexp = "^\\d+$", message = "QQ must be numeric")
     val qq: JsonNullable<String> = JsonNullable.undefined(),
 
-    @field:Email
-    val email: JsonNullable<String> = JsonNullable.undefined()
+    @field:NotNullable
+    @field:Future
+    val deadline: JsonNullable<Instant> = JsonNullable.undefined(),
 )
