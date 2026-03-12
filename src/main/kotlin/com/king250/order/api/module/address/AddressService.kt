@@ -17,7 +17,7 @@ import org.springframework.web.server.ResponseStatusException
 class AddressService(
     private val dsl: DSLContext,
 ) {
-    fun findAll(request: AddressQueryRequest): Page<AddressRecord> {
+    fun findAll(request: QueryAddressRequest): Page<AddressRecord> {
         val pageable = request.toPageable()
         val conditions = mutableListOf<Condition>()
         request.id?.let {

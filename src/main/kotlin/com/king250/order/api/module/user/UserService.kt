@@ -2,7 +2,9 @@ package com.king250.order.api.module.user
 
 import com.king250.order.api.integration.napcat.NapcatService
 import com.king250.order.api.util.toJooq
+import com.king250.order.jooq.enums.Role
 import com.king250.order.jooq.tables.records.UserRecord
+import com.king250.order.jooq.tables.references.GROUP_USER
 import com.king250.order.jooq.tables.references.USER
 import kotlinx.coroutines.*
 import org.jooq.Condition
@@ -22,7 +24,7 @@ class UserService(
     private val dsl: DSLContext,
     private val napcat: NapcatService,
 ) {
-    fun findAll(request: UserQueryRequest): Page<UserRecord> {
+    fun findAll(request: QueryUserRequest): Page<UserRecord> {
         val pageable = request.toPageable()
         val conditions = mutableListOf<Condition>()
         val sortMap = mapOf(
@@ -55,26 +57,31 @@ class UserService(
             .fetchSingle()
     }
 
-    suspend fun batchCreate(request: UserBatchCreateRequest): Page<UserRecord> {
-        val list = coroutineScope {
+    @Transactional
+    suspend fun batchCreate(request: BatchCreateUserRequest): Int {
+        val inserts = coroutineScope {
             request.users.toSet().map { qq ->
                 async {
-                    qq to getNickname(qq)
+                    try {
+                        qq to getNickname(qq)
+                    } catch (_: Exception) {
+                        qq to null
+                    }
                 }
-            }.awaitAll().toMap()
+            }.awaitAll().filter {
+                it.second != null
+            }.toMap().map { (qq, name) ->
+                dsl.insertInto(USER)
+                    .set(USER.NAME, name)
+                    .set(USER.QQ, qq)
+                    .onDuplicateKeyIgnore()
+            }
         }
         return withContext(Dispatchers.IO) {
-            val query = dsl.insertInto(USER, USER.NAME, USER.QQ).apply {
-                list.forEach {
-                    values(it.value, it.key)
-                }
-            }
-            val records = query.onDuplicateKeyUpdate()
-                .set(USER.NAME, excluded(USER.NAME))
-                .returning()
-                .fetch()
-            PageImpl(records, Pageable.unpaged(), records.size.toLong())
-        }
+            dsl.batch(inserts).execute()
+        }.filter {
+            it == 1
+        }.size
     }
 
     suspend fun getNickname(userId: String): String {

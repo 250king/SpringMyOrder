@@ -4,7 +4,7 @@ import com.king250.order.api.common.NotNullable
 import jakarta.validation.constraints.Size
 import org.openapitools.jackson.nullable.JsonNullable
 
-data class AddressUpdateRequest(
+data class UpdateAddressRequest(
     @field:NotNullable
     @field:Size(max = 20)
     var name: JsonNullable<String> = JsonNullable.undefined(),

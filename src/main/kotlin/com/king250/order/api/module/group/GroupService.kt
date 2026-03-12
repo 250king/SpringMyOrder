@@ -4,11 +4,7 @@ import com.king250.order.api.module.user.UserResponse
 import com.king250.order.api.util.toJooq
 import com.king250.order.jooq.enums.Role
 import com.king250.order.jooq.tables.records.GroupRecord
-import com.king250.order.jooq.tables.references.CART
-import com.king250.order.jooq.tables.references.GROUP
-import com.king250.order.jooq.tables.references.GROUP_USER
-import com.king250.order.jooq.tables.references.ITEM
-import com.king250.order.jooq.tables.references.USER
+import com.king250.order.jooq.tables.references.*
 import org.jooq.Condition
 import org.jooq.DSLContext
 import org.springframework.data.domain.Page
@@ -22,7 +18,7 @@ import org.springframework.web.server.ResponseStatusException
 class GroupService(
     private val dsl: DSLContext
 ) {
-    fun findAll(request: GroupQueryRequest): Page<GroupRecord> {
+    fun findAll(request: QueryGroupRequest): Page<GroupRecord> {
         val pageable = request.toPageable()
         val conditions = mutableListOf<Condition>()
         val sortMap = mapOf(
@@ -78,7 +74,10 @@ class GroupService(
         }
     }
 
-    fun getMembers(request: MemberQueryRequest, groupId: Long): Page<MemberResponse> {
+    fun getMembers(request: QueryMemberRequest, groupId: Long): Page<MemberResponse> {
+        if (!dsl.fetchExists(GROUP.where(GROUP.ID.eq(groupId)))) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "Group not found.")
+        }
         val pageable = request.toPageable()
         val conditions = mutableListOf<Condition>()
         val sortMap = mapOf(
@@ -118,12 +117,11 @@ class GroupService(
                     createdAt = r.get(GROUP_USER.CREATED_AT)!!
                 )
             }
-         return PageImpl(records, pageable, total.toLong())
+        return PageImpl(records, pageable, total.toLong())
     }
 
     @Transactional
-    fun addMembersToGroup(groupId: Long, userIds: Set<Long>, ownerId: Long? = null) {
-        if (userIds.isEmpty()) return
+    fun addMembersToGroup(groupId: Long, userIds: Set<Long>, ownerId: Long? = null): Int {
         val inserts = userIds.map { userId ->
             val actualRole = if (userId == ownerId) Role.OWNER else Role.MEMBER
             dsl.insertInto(GROUP_USER)
@@ -132,7 +130,7 @@ class GroupService(
                 .set(GROUP_USER.ROLE, actualRole)
                 .onDuplicateKeyIgnore()
         }
-        dsl.batch(inserts).execute()
+        return dsl.batch(inserts).execute().filter { it == 1 }.size
     }
 
     @Transactional

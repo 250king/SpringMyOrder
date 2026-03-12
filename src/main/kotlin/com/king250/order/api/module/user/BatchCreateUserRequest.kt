@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.Pattern
 
-data class UserBatchCreateRequest(
+data class BatchCreateUserRequest(
     @field:NotEmpty
     @field:Valid
     val users: List<

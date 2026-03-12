@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
 
-data class AddressCreateRequest(
+data class CreateAddressRequest(
     @field:NotNull
     val userId: Long,
 

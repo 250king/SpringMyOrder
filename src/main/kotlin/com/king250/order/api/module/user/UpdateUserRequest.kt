@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Size
 import jakarta.validation.constraints.Pattern
 import org.openapitools.jackson.nullable.JsonNullable
 
-data class UserUpdateRequest(
+data class UpdateUserRequest(
     @field:NotNullable
     @field:Size(min = 1, max = 50)
     val name: JsonNullable<String> = JsonNullable.undefined(),

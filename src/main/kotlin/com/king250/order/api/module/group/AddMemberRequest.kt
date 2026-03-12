@@ -4,7 +4,7 @@ import jakarta.validation.Valid
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 
-data class GroupBatchRequest(
+data class AddMemberRequest(
     @field:Valid
     @field:NotEmpty
     val users: List<@NotNull Long>,

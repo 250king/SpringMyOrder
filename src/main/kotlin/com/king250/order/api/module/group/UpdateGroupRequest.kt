@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Size
 import org.openapitools.jackson.nullable.JsonNullable
 import java.time.Instant
 
-data class GroupUpdateRequest(
+data class UpdateGroupRequest(
     @field:NotNullable
     @field:Size(min = 1, max = 50)
     val name: JsonNullable<String> = JsonNullable.undefined(),

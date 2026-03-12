@@ -9,7 +9,7 @@ import org.mapstruct.MappingTarget
 interface UserMapper {
     fun toResponse(user: UserRecord): UserResponse
 
-    fun toEntity(request: UserCreateRequest): UserRecord
+    fun toEntity(request: CreateUserRequest): UserRecord
 
-    fun updateEntity(request: UserUpdateRequest, @MappingTarget user: UserRecord): UserRecord
+    fun updateEntity(request: UpdateUserRequest, @MappingTarget user: UserRecord): UserRecord
 }

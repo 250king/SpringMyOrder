@@ -9,7 +9,7 @@ import org.mapstruct.MappingTarget
 interface GroupMapper {
     fun toResponse(group: GroupRecord): GroupResponse
 
-    fun toEntity(request: GroupCreateRequest): GroupRecord
+    fun toEntity(request: CreateGroupRequest): GroupRecord
 
-    fun updateEntity(request: GroupUpdateRequest, @MappingTarget group: GroupRecord): GroupRecord
+    fun updateEntity(request: UpdateGroupRequest, @MappingTarget group: GroupRecord): GroupRecord
 }

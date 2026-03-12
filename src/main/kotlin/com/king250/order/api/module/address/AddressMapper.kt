@@ -9,7 +9,7 @@ import org.mapstruct.MappingTarget
 interface AddressMapper {
     fun toResponse(address: AddressRecord): AddressResponse
 
-    fun toEntity(request: AddressCreateRequest): AddressRecord
+    fun toEntity(request: CreateAddressRequest): AddressRecord
 
-    fun updateEntity(request: AddressUpdateRequest, @MappingTarget address: AddressRecord): AddressRecord
+    fun updateEntity(request: UpdateAddressRequest, @MappingTarget address: AddressRecord): AddressRecord
 }

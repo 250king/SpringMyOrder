@@ -9,7 +9,7 @@ import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
 import java.time.Instant
 
-data class GroupCreateRequest(
+data class CreateGroupRequest(
     @field:NotBlank
     @field:Size(min = 1, max = 50)
     val name: String,

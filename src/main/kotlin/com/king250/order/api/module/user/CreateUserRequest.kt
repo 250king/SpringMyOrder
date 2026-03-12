@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
 import jakarta.validation.constraints.Pattern
 
-data class UserCreateRequest(
+data class CreateUserRequest(
     @field:NotBlank
     @field:Size(min = 1, max = 50)
     val name: String,

@@ -17,21 +17,23 @@ class UserController(
     private val objectMapper: ObjectMapper
 ) {
     @GetMapping("/users")
-    fun getUsers(@Valid request: UserQueryRequest): ItemResponse<UserResponse> {
+    fun getUsers(@Valid request: QueryUserRequest): ItemResponse<UserResponse> {
         val users = service.findAll(request)
         return users.toItem(mapper::toResponse)
     }
 
     @PostMapping("/users")
-    fun createUser(@Valid @RequestBody request: UserCreateRequest): UserResponse {
+    fun createUser(@Valid @RequestBody request: CreateUserRequest): UserResponse {
         val user = mapper.toEntity(request)
         return mapper.toResponse(service.save(user))
     }
 
     @PostMapping("/users/batch")
-    suspend fun batchCreateUsers(@Valid @RequestBody request: UserBatchCreateRequest): ItemResponse<UserResponse> {
-        val users = service.batchCreate(request)
-        return users.toItem(mapper::toResponse)
+    suspend fun batchCreateUsers(@Valid @RequestBody request: BatchCreateUserRequest): ObjectNode {
+        val result = service.batchCreate(request)
+        return objectMapper.createObjectNode().apply {
+            put("total", result)
+        }
     }
 
     @GetMapping("/users/nickname")
@@ -46,21 +48,21 @@ class UserController(
         }
     }
 
-    @GetMapping("/users/{id}")
-    fun getUserById(@PathVariable id: Long): UserResponse {
-        val user = service.findById(id)
+    @GetMapping("/users/{userId}")
+    fun getUserById(@PathVariable userId: Long): UserResponse {
+        val user = service.findById(userId)
         return mapper.toResponse(user)
     }
 
-    @PatchMapping("/users/{id}")
-    fun updateUserById(@PathVariable id: Long, @Valid @RequestBody request: UserUpdateRequest): UserResponse {
-        val user = service.findById(id)
+    @PatchMapping("/users/{userId}")
+    fun updateUserById(@PathVariable userId: Long, @Valid @RequestBody request: UpdateUserRequest): UserResponse {
+        val user = service.findById(userId)
         mapper.updateEntity(request, user)
         return mapper.toResponse(service.save(user))
     }
 
-    @DeleteMapping("/users/{id}")
-    fun deleteUserById(@PathVariable id: Long) {
-        service.deleteById(id)
+    @DeleteMapping("/users/{userId}")
+    fun deleteUserById(@PathVariable userId: Long) {
+        service.deleteById(userId)
     }
 }
