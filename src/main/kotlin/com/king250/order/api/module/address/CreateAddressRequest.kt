@@ -1,13 +1,11 @@
 package com.king250.order.api.module.address
 
 import jakarta.validation.constraints.NotBlank
-import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
 
 data class CreateAddressRequest(
-    @field:NotNull
-    val userId: Long,
+    var userId: Long?,
 
     @field:NotBlank
     @field:Size(max = 20)

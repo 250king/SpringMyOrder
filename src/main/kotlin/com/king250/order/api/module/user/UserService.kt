@@ -2,9 +2,7 @@ package com.king250.order.api.module.user
 
 import com.king250.order.api.integration.napcat.NapcatService
 import com.king250.order.api.util.toJooq
-import com.king250.order.jooq.enums.Role
 import com.king250.order.jooq.tables.records.UserRecord
-import com.king250.order.jooq.tables.references.GROUP_USER
 import com.king250.order.jooq.tables.references.USER
 import kotlinx.coroutines.*
 import org.jooq.Condition
@@ -13,7 +11,6 @@ import org.jooq.exception.NoDataFoundException
 import org.jooq.impl.DSL.*
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
-import org.springframework.data.domain.Pageable
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional

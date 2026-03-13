@@ -1,17 +1,23 @@
 package com.king250.order.api.config
 
+import com.king250.order.api.integration.auth.AuthService
+import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import jakarta.validation.ConstraintViolationException
 import org.jooq.exception.IntegrityConstraintViolationException
 import org.jooq.exception.NoDataFoundException
 import org.slf4j.LoggerFactory
 import org.springframework.http.converter.HttpMessageNotReadableException
+import org.springframework.security.authorization.AuthorizationDeniedException
+import org.springframework.util.AntPathMatcher
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.server.ResponseStatusException
 
 @RestControllerAdvice
-class ExceptionConfig {
+class ExceptionConfig(
+    private val auth: AuthService
+) {
     private val log = LoggerFactory.getLogger(javaClass)
 
     @ExceptionHandler(IntegrityConstraintViolationException::class)
@@ -44,6 +50,31 @@ class ExceptionConfig {
     @ExceptionHandler(HttpMessageNotReadableException::class)
     fun handleValidationException(e: HttpMessageNotReadableException, response: HttpServletResponse) {
         response.sendError(400, e.message)
+    }
+
+    @ExceptionHandler(AuthorizationDeniedException::class)
+    fun handleAuthorizationException(
+        e: AuthorizationDeniedException,
+        request: HttpServletRequest,
+        response: HttpServletResponse
+    ) {
+        val uri = request.requestURI
+        val matcher = AntPathMatcher()
+        var status = 404
+        var message = "No static resource item."
+        when {
+            matcher.match("/groups/{groupId}/**", uri) -> {
+                val variables = matcher.extractUriTemplateVariables("/groups/{groupId}/**", uri)
+                val groupId = variables["groupId"]?.toLongOrNull()
+                if (groupId != null) {
+                    if (auth.isMember(groupId)) {
+                        status = 403
+                        message = e.message ?: "You don't have permission to perform this action."
+                    }
+                }
+            }
+        }
+        response.sendError(status, message)
     }
 
     @ExceptionHandler(Exception::class)

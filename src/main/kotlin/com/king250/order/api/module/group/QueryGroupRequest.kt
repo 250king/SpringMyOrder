@@ -6,5 +6,7 @@ import com.king250.order.jooq.enums.GroupStatus
 class QueryGroupRequest(
     var ownerId: Long? = null,
 
+    var userId: Long? = null,
+
     var status: GroupStatus? = null,
 ) : QueryRequest()

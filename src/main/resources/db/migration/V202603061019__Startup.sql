@@ -1,13 +1,13 @@
 CREATE TYPE group_status AS ENUM ('OPENING', 'CLOSED', 'FINISHED');
 
-CREATE TYPE "role" AS ENUM ('OWNER', 'ADMIN', 'MEMBER');
+CREATE TYPE group_role AS ENUM ('OWNER', 'ADMIN', 'MEMBER');
 
 CREATE TYPE order_status AS ENUM ('PENDING', 'PAID', 'DEPARTED', 'IN_DEPOT', 'SHIPPED', 'ARRIVED', 'DELIVERED', 'FINISHED', 'CANCELLED');
 
 CREATE TABLE "user"
 (
     id           BIGSERIAL PRIMARY KEY,
-    name         VARCHAR(20) NOT NULL UNIQUE,
+    name         VARCHAR(50) NOT NULL UNIQUE,
     qq           VARCHAR(32) NOT NULL UNIQUE,
     email        VARCHAR(255) UNIQUE,
     credit_score INT         NOT NULL DEFAULT 100 CHECK (credit_score >= 0 AND credit_score <= 100),
@@ -20,7 +20,7 @@ CREATE TABLE "group"
 (
     id         BIGSERIAL PRIMARY KEY,
     owner_id   BIGINT       NOT NULL,
-    name       VARCHAR(20)  NOT NULL UNIQUE,
+    name       VARCHAR(50)  NOT NULL UNIQUE,
     qq         VARCHAR(20)  NOT NULL UNIQUE,
     status     group_status NOT NULL DEFAULT 'OPENING',
     deadline   TIMESTAMPTZ  NOT NULL DEFAULT (CURRENT_TIMESTAMP + INTERVAL '7 days'),
@@ -44,7 +44,7 @@ CREATE TABLE group_user
 (
     user_id    BIGINT      NOT NULL,
     group_id   BIGINT      NOT NULL,
-    role       "role"      NOT NULL DEFAULT 'MEMBER',
+    role       group_role  NOT NULL DEFAULT 'MEMBER',
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_group_user_user FOREIGN KEY (user_id) REFERENCES "user" (id) ON DELETE NO ACTION,
     CONSTRAINT fk_group_user_group FOREIGN KEY (group_id) REFERENCES "group" (id) ON DELETE NO ACTION,

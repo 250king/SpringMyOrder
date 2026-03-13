@@ -1,8 +1,9 @@
 package com.king250.order.api.module.group
 
+import com.king250.order.api.integration.auth.AuthService
 import com.king250.order.api.module.user.UserResponse
 import com.king250.order.api.util.toJooq
-import com.king250.order.jooq.enums.Role
+import com.king250.order.jooq.enums.GroupRole
 import com.king250.order.jooq.tables.records.GroupRecord
 import com.king250.order.jooq.tables.references.*
 import org.jooq.Condition
@@ -16,11 +17,11 @@ import org.springframework.web.server.ResponseStatusException
 
 @Service
 class GroupService(
-    private val dsl: DSLContext
+    private val dsl: DSLContext,
+    private val auth: AuthService
 ) {
     fun findAll(request: QueryGroupRequest): Page<GroupRecord> {
         val pageable = request.toPageable()
-        val conditions = mutableListOf<Condition>()
         val sortMap = mapOf(
             "id" to GROUP.ID,
             "name" to GROUP.NAME,
@@ -29,17 +30,28 @@ class GroupService(
             "created_at" to GROUP.CREATED_AT,
             "updated_at" to GROUP.UPDATED_AT
         )
-        request.id?.let {
-            conditions.add(GROUP.ID.eq(it))
-        }
-        request.keyword?.takeIf { it.isNotBlank() }?.let { kw ->
-            conditions.add(GROUP.NAME.containsIgnoreCase(kw).or(GROUP.QQ.containsIgnoreCase(kw)))
-        }
-        request.ownerId?.let {
-            conditions.add(GROUP.OWNER_ID.eq(it))
-        }
-        request.status?.let {
-            conditions.add(GROUP.STATUS.eq(it))
+        val conditions = mutableListOf<Condition>().apply {
+            request.id?.let { add(GROUP.ID.eq(it)) }
+            request.ownerId?.let { add(GROUP.OWNER_ID.eq(it)) }
+            request.status?.let { add(GROUP.STATUS.eq(it)) }
+            request.keyword?.takeIf { it.isNotBlank() }?.let { kw ->
+                add(GROUP.NAME.containsIgnoreCase(kw).or(GROUP.QQ.containsIgnoreCase(kw)))
+            }
+            if (auth.isSuperAdmin()) {
+                request.userId?.let { uid ->
+                    add(GROUP.ID.`in`(
+                        dsl.select(GROUP_USER.GROUP_ID)
+                            .from(GROUP_USER)
+                            .where(GROUP_USER.USER_ID.eq(uid))
+                    ))
+                }
+            } else {
+                add(GROUP.ID.`in`(
+                    dsl.select(GROUP_USER.GROUP_ID)
+                        .from(GROUP_USER)
+                        .where(GROUP_USER.USER_ID.eq(auth.getUid()))
+                ))
+            }
         }
         val total = dsl.fetchCount(GROUP, conditions)
         val records = dsl.selectFrom(GROUP)
@@ -65,7 +77,7 @@ class GroupService(
                 .returning()
                 .fetchOne()!!
             val list = memberIds.toMutableSet().apply { add(group.ownerId!!) }
-            addMembersToGroup(inserted.id!!, list, group.ownerId)
+            addMembers(inserted.id!!, list, group.ownerId)
             return inserted
         } else {
             dsl.attach(group)
@@ -121,9 +133,9 @@ class GroupService(
     }
 
     @Transactional
-    fun addMembersToGroup(groupId: Long, userIds: Set<Long>, ownerId: Long? = null): Int {
+    fun addMembers(groupId: Long, userIds: Set<Long>, ownerId: Long? = null): Int {
         val inserts = userIds.map { userId ->
-            val actualRole = if (userId == ownerId) Role.OWNER else Role.MEMBER
+            val actualRole = if (userId == ownerId) GroupRole.OWNER else GroupRole.MEMBER
             dsl.insertInto(GROUP_USER)
                 .set(GROUP_USER.GROUP_ID, groupId)
                 .set(GROUP_USER.USER_ID, userId)
@@ -134,12 +146,12 @@ class GroupService(
     }
 
     @Transactional
-    fun removeMemberFromGroup(groupId: Long, userId: Long) {
+    fun removeMember(groupId: Long, userId: Long) {
         val user = dsl.selectFrom(GROUP_USER)
             .where(GROUP_USER.USER_ID.eq(userId))
             .and(GROUP_USER.GROUP_ID.eq(groupId))
             .fetchSingle()
-        if (user.role == Role.OWNER) {
+        if (user.role == GroupRole.OWNER) {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Owner cannot be removed from the group.")
         }
         //TODO: 需要添加是否有活跃中的订单的检查
@@ -156,47 +168,61 @@ class GroupService(
     }
 
     @Transactional
-    fun changeMemberRole(groupId: Long, userId: Long, role: Role) {
-        if (role == Role.OWNER) {
+    fun changeRole(groupId: Long, userId: Long, role: GroupRole) : MemberResponse {
+        if (role == GroupRole.OWNER) {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot assign owner role to a member.")
         }
         val user = dsl.selectFrom(GROUP_USER)
-            .where(GROUP_USER.USER_ID.eq(groupId))
-            .and(GROUP_USER.GROUP_ID.eq(userId))
+            .where(GROUP_USER.USER_ID.eq(userId))
+            .and(GROUP_USER.GROUP_ID.eq(groupId))
             .fetchSingle()
-        if (user.role == Role.OWNER) {
+        if (user.role == GroupRole.OWNER) {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Owner's role cannot be changed.")
         }
         dsl.update(GROUP_USER)
             .set(GROUP_USER.ROLE, role)
-            .where(GROUP_USER.USER_ID.eq(groupId))
-            .and(GROUP_USER.GROUP_ID.eq(userId))
+            .where(GROUP_USER.USER_ID.eq(userId))
+            .and(GROUP_USER.GROUP_ID.eq(groupId))
             .execute()
+        return dsl.select(*USER.fields(), *GROUP_USER.fields())
+            .from(GROUP_USER)
+            .join(USER)
+            .on(USER.ID.eq(GROUP_USER.USER_ID))
+            .where(GROUP_USER.USER_ID.eq(userId))
+            .and(GROUP_USER.GROUP_ID.eq(groupId))
+            .fetchSingle { r ->
+                MemberResponse(
+                    user = r.into(USER).into(UserResponse::class.java),
+                    role = r.get(GROUP_USER.ROLE)!!,
+                    createdAt = r.get(GROUP_USER.CREATED_AT)!!
+                )
+            }
     }
 
     @Transactional
-    fun transferOwnership(groupId: Long, ownerId: Long) {
+    fun transferOwnership(groupId: Long, ownerId: Long): GroupRecord {
         val owner = dsl.selectFrom(GROUP_USER)
             .where(GROUP_USER.GROUP_ID.eq(groupId))
             .and(GROUP_USER.USER_ID.eq(ownerId))
             .fetchSingle()
-        if (owner.role == Role.OWNER) {
+        if (owner.role == GroupRole.OWNER) {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "New owner is already the current owner.")
         }
         dsl.update(GROUP_USER)
-            .set(GROUP_USER.ROLE, Role.MEMBER)
+            .set(GROUP_USER.ROLE, GroupRole.MEMBER)
             .where(GROUP_USER.GROUP_ID.eq(groupId))
-            .and(GROUP_USER.ROLE.eq(Role.OWNER))
+            .and(GROUP_USER.ROLE.eq(GroupRole.OWNER))
             .execute()
         dsl.update(GROUP_USER)
-            .set(GROUP_USER.ROLE, Role.OWNER)
+            .set(GROUP_USER.ROLE, GroupRole.OWNER)
             .where(GROUP_USER.GROUP_ID.eq(groupId))
             .and(GROUP_USER.USER_ID.eq(ownerId))
             .execute()
-        dsl.update(GROUP)
+        return dsl.update(GROUP)
             .set(GROUP.OWNER_ID, ownerId)
             .where(GROUP.ID.eq(groupId))
-            .execute()
+            .returning()
+            .fetchSingle()
     }
 
     fun deleteById(id: Long) {
