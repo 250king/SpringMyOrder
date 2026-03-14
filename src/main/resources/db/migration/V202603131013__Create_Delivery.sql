@@ -1,11 +1,7 @@
 CREATE TYPE delivery_company AS ENUM ('SF', 'JD', 'YTO', 'ZTO');
-
 CREATE TYPE delivery_status AS ENUM ('PENDING', 'PUSHED', 'DELIVERED', 'ARRIVED', 'CANCELED');
-
 CREATE TYPE shipping_type AS ENUM ('LOGISTICS', 'PERSONAL');
-
 CREATE TYPE shipping_status AS ENUM ('PENDING', 'SHIPPED', 'ARRIVED', 'CANCELED');
-
 CREATE TYPE payment_method AS ENUM ('WECHAT', 'ALIPAY', 'JDPAY', 'UNIONPAY', 'CASH');
 
 CREATE TABLE delivery
@@ -51,7 +47,5 @@ CREATE TABLE shipping
 );
 
 ALTER TABLE "order" ADD COLUMN shipping_id BIGINT;
-
 ALTER TABLE "order" ADD CONSTRAINT fk_order_shipping FOREIGN KEY (shipping_id) REFERENCES shipping (id) ON DELETE SET NULL;
-
 ALTER TABLE "order" ADD COLUMN comment TEXT;

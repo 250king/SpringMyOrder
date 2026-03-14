@@ -8,6 +8,7 @@ import com.king250.order.jooq.tables.records.GroupRecord
 import com.king250.order.jooq.tables.references.*
 import org.jooq.Condition
 import org.jooq.DSLContext
+import org.jooq.exception.NoDataFoundException
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.http.HttpStatus
@@ -88,7 +89,7 @@ class GroupService(
 
     fun getMembers(request: QueryMemberRequest, groupId: Long): Page<MemberResponse> {
         if (!dsl.fetchExists(GROUP.where(GROUP.ID.eq(groupId)))) {
-            throw ResponseStatusException(HttpStatus.NOT_FOUND, "Group not found.")
+            throw NoDataFoundException()
         }
         val pageable = request.toPageable()
         val conditions = mutableListOf<Condition>()
@@ -145,6 +146,7 @@ class GroupService(
         return dsl.batch(inserts).execute().filter { it == 1 }.size
     }
 
+    /*
     @Transactional
     fun removeMember(groupId: Long, userId: Long) {
         val user = dsl.selectFrom(GROUP_USER)
@@ -166,6 +168,7 @@ class GroupService(
             .and(ITEM.GROUP_ID.eq(groupId))
             .execute()
     }
+    */
 
     @Transactional
     fun changeRole(groupId: Long, userId: Long, role: GroupRole) : MemberResponse {
@@ -225,9 +228,11 @@ class GroupService(
             .fetchSingle()
     }
 
+    /*
     fun deleteById(id: Long) {
         dsl.deleteFrom(GROUP)
             .where(GROUP.ID.eq(id))
             .execute()
     }
+    */
 }

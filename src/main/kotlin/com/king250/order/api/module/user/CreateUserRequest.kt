@@ -7,13 +7,15 @@ import jakarta.validation.constraints.Pattern
 
 data class CreateUserRequest(
     @field:NotBlank
-    @field:Size(min = 1, max = 50)
+    @field:Size(max = 50)
     val name: String,
 
     @field:NotBlank
+    @field:Size(max = 40)
     @field:Pattern(regexp = "^\\d+$", message = "QQ must be numeric")
     val qq: String,
 
+    @field:Size(max = 255)
     @field:Email
     val email: String?
 )
