@@ -76,10 +76,9 @@ class AddressService(
                 .returning()
                 .fetchOne()!!
         } else {
-            val existing = findById(address.id!!)
-            existing.from(address)
-            existing.store()
-            return existing
+            dsl.attach(address)
+            address.store()
+            return address
         }
     }
 

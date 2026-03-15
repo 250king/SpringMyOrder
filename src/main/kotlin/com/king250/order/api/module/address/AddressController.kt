@@ -12,26 +12,26 @@ class AddressController(
     private val mapper: AddressMapper,
 ) {
     @GetMapping("/addresses")
-    fun getAddresses(@Valid request: QueryAddressRequest): ItemResponse<AddressResponse> {
+    fun findAll(@Valid request: QueryAddressRequest): ItemResponse<AddressResponse> {
         val addresses = service.findAll(request)
         return addresses.toItem(mapper::toResponse)
     }
 
     @PostMapping("/addresses")
     @ResponseStatus(HttpStatus.CREATED)
-    fun createAddress(@Valid @RequestBody request: CreateAddressRequest): AddressResponse {
+    fun create(@Valid @RequestBody request: CreateAddressRequest): AddressResponse {
         val address = mapper.toEntity(request)
         return mapper.toResponse(service.save(address))
     }
 
     @GetMapping("/addresses/{addressId}")
-    fun getAddressById(@PathVariable addressId: Long): AddressResponse {
+    fun findById(@PathVariable addressId: Long): AddressResponse {
         val address = service.findById(addressId)
         return mapper.toResponse(address)
     }
 
     @PatchMapping("/addresses/{addressId}")
-    fun updateAddressById(@PathVariable addressId: Long, @Valid @RequestBody request: UpdateAddressRequest): AddressResponse {
+    fun update(@PathVariable addressId: Long, @Valid @RequestBody request: UpdateAddressRequest): AddressResponse {
         val address = service.findById(addressId)
         mapper.updateEntity(request, address)
         return mapper.toResponse(service.save(address))
@@ -39,7 +39,7 @@ class AddressController(
 
     @DeleteMapping("/addresses/{addressId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun deleteAddressById(@PathVariable addressId: Long) {
+    fun deleteById(@PathVariable addressId: Long) {
         service.deleteById(addressId)
     }
 }

@@ -83,8 +83,7 @@ class UserService(
 
     suspend fun getNickname(userId: String): String {
         val name = napcat.getUserInfo(userId).data?.nick
-            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "The QQ user does not exist")
-        if (name.isEmpty()) {
+        if (name.isNullOrBlank()) {
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "The QQ user does not exist")
         }
         return name

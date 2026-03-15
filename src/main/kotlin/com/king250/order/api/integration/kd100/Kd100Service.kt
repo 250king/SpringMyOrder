@@ -1,25 +1,26 @@
 package com.king250.order.api.integration.kd100
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.PropertyNamingStrategies
-import io.ktor.client.HttpClient
-import io.ktor.client.call.body
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.request.HttpRequestPipeline
-import io.ktor.client.request.forms.FormDataContent
-import io.ktor.client.request.forms.submitForm
-import io.ktor.client.request.post
-import io.ktor.client.request.setBody
-import io.ktor.http.Parameters
-import io.ktor.http.parameters
-import io.ktor.serialization.jackson.jackson
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.request.*
+import io.ktor.client.request.forms.*
+import io.ktor.http.*
+import io.ktor.serialization.jackson.*
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.util.DigestUtils
 
 @Service
 class Kd100Service(
     ktor: HttpClient,
+    private val objectMapper: ObjectMapper,
     private val properties: Kd100Properties
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
+
     private val client = ktor.config {
         install(ContentNegotiation) {
             jackson {
@@ -31,7 +32,7 @@ class Kd100Service(
             if (payload is FormDataContent) {
                 val params = payload.formData
                 val param = params["param"] ?: ""
-                val t = (System.currentTimeMillis() / 1000 * 1000).toString()
+                val t = System.currentTimeMillis().toString()
                 val signStr = param + t + properties.key + properties.secret
                 val sign = DigestUtils.md5DigestAsHex(signStr.toByteArray()).uppercase()
                 val newParams = Parameters.build {
@@ -46,11 +47,18 @@ class Kd100Service(
     }
 
     suspend fun createOrder(data: CreateOrderRequest): Kd100Response<OrderResponse> {
-        return client.submitForm(
-            url = "https://order.kuaidi100.com/order/corderapi.do",
-            formParameters = parameters {
-                append()
-            }
-        ).body()
+        data.callBackUrl = properties.webhook
+        try {
+            return client.submitForm(
+                url = "https://order.kuaidi100.com/order/corderapi.do",
+                formParameters = parameters {
+                    append("method", "cOrder")
+                    append("param", objectMapper.writeValueAsString(data))
+                }
+            ).body()
+        } catch (e: Exception) {
+            log.error("Kd100 API call failed with data $data", e)
+            throw e
+        }
     }
 }

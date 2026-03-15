@@ -5,7 +5,7 @@ data class OrderResponse(
 
     val orderId: String,
 
-    val kuaidinum: String,
+    val kuaidinum: String?,
 
     val pollToken: String,
 )
