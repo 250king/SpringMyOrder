@@ -24,9 +24,7 @@ class AddressService(
             } else if (request.userId != null) {
                 add(ADDRESS.USER_ID.eq(request.userId))
             }
-            request.id?.let {
-                add(ADDRESS.ID.eq(it))
-            }
+            request.id?.let { add(ADDRESS.ID.eq(it)) }
             request.keyword?.takeIf { it.isNotBlank() }?.let { kw ->
                 add(ADDRESS.NAME.containsIgnoreCase(kw)
                     .or(ADDRESS.PHONE.containsIgnoreCase(kw))

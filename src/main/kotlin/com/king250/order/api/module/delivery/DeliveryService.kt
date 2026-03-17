@@ -51,11 +51,6 @@ class DeliveryService(
         val conditions = mutableListOf<Condition>().apply {
             request.company?.let { add(DELIVERY.COMPANY.eq(it)) }
             request.status?.let { add(DELIVERY.STATUS.eq(it)) }
-            if (!auth.isSuperAdmin()) {
-                add(DELIVERY.USER_ID.eq(auth.getUid()))
-            } else if (request.userId != null) {
-                add(DELIVERY.USER_ID.eq(request.userId))
-            }
             request.keyword?.takeIf { it.isNotBlank() }?.let { kw ->
                 add(DELIVERY.NAME.containsIgnoreCase(kw)
                     .or(DELIVERY.NAME.containsIgnoreCase(kw))
@@ -63,6 +58,11 @@ class DeliveryService(
                     .or(DELIVERY.ADDRESS.containsIgnoreCase(kw))
                     .or(DELIVERY.TRACKING_NUMBER.containsIgnoreCase(kw))
                 )
+            }
+            if (request.userId != null && auth.isAdminMember(request.userId!!)) {
+                add(DELIVERY.USER_ID.eq(request.userId))
+            } else {
+                add(DELIVERY.USER_ID.eq(auth.getUid()))
             }
         }
         val sortMap = mapOf(

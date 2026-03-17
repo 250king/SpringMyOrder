@@ -22,7 +22,7 @@ class DeliveryController(
     private val objectMapper: ObjectMapper
 ) {
     @GetMapping("/deliveries")
-    fun findAll(request: QueryDeliveryRequest): ItemResponse<DeliveryResponse> {
+    fun findAll(@Valid request: QueryDeliveryRequest): ItemResponse<DeliveryResponse> {
         val deliveries = service.findAll(request)
         return deliveries.toItem(mapper::toResponse)
     }
@@ -37,7 +37,7 @@ class DeliveryController(
 
     @PostMapping("/deliveries/push")
     @PreAuthorize("@auth.isAdminDeliveries(#request.deliveries)")
-    suspend fun pushDelivery(request: PushDeliveryRequest): ObjectNode {
+    suspend fun pushDelivery(@Valid @RequestBody request: PushDeliveryRequest): ObjectNode {
         val result = service.pushDelivery(request)
         return objectMapper.createObjectNode().apply {
             put("total", result)
@@ -53,7 +53,10 @@ class DeliveryController(
 
     @PostMapping("/deliveries/{deliveryId}")
     @PreAuthorize("@auth.isSelfDelivery(#deliveryId)")
-    fun updateDelivery(@PathVariable deliveryId: Long, @RequestBody request: UpdateDeliveryRequest): DeliveryResponse {
+    fun updateDelivery(
+        @PathVariable deliveryId: Long,
+        @Valid @RequestBody request: UpdateDeliveryRequest
+    ): DeliveryResponse {
         val delivery = service.findById(deliveryId) as DeliveryRecord
         mapper.updateEntity(request, delivery)
         return mapper.toResponse(service.save(delivery, request.addressId))

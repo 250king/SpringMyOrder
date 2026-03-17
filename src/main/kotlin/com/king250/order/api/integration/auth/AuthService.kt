@@ -1,8 +1,10 @@
 package com.king250.order.api.integration.auth
 
 import com.king250.order.jooq.enums.GroupRole
+import com.king250.order.jooq.enums.PaymentType
 import com.king250.order.jooq.tables.references.*
 import org.jooq.DSLContext
+import org.jooq.impl.DSL
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 import org.springframework.stereotype.Component
@@ -77,8 +79,54 @@ class AuthService(
         return dsl.select(DELIVERY.ID)
             .from(DELIVERY)
             .where(DELIVERY.ID.eq(deliveryId))
-            .and(DELIVERY.USER_ID.eq(getUid()))
+            .and(DSL.or(
+                DELIVERY.USER_ID.eq(getUid()),
+                DSL.exists(
+                    dsl.selectOne()
+                        .from(DELIVERY_LIST)
+                        .join(ITEM).on(ITEM.ID.eq(DELIVERY_LIST.LIST_ID))
+                        .join(GROUP).on(GROUP.ID.eq(ITEM.GROUP_ID))
+                        .where(DELIVERY_LIST.DELIVERY_ID.eq(DELIVERY.ID))
+                        .and(GROUP.OWNER_ID.eq(getUid()))
+                )
+            ))
             .fetchOne(DELIVERY.ID) != null
+    }
+
+    fun isSelfPayment(paymentId: Long): Boolean {
+        if (isSuperAdmin()) {
+            return true
+        }
+        val payment = dsl.selectFrom(PAYMENT)
+            .where(PAYMENT.ID.eq(paymentId))
+            .fetchSingle()
+        return when(payment.type!!) {
+            PaymentType.DELIVERY -> {
+                dsl.fetchExists(
+                    dsl.selectOne()
+                        .from(DELIVERY)
+                        .join(DELIVERY_LIST).on(DELIVERY_LIST.DELIVERY_ID.eq(DELIVERY.ID))
+                        .join(ITEM).on(ITEM.ID.eq(DELIVERY_LIST.LIST_ID))
+                        .join(GROUP).on(GROUP.ID.eq(ITEM.GROUP_ID))
+                        .where(DELIVERY.ID.eq(payment.referenceId!!))
+                        .and(
+                            DSL.or(
+                                GROUP.OWNER_ID.eq(getUid()),
+                                DELIVERY.USER_ID.eq(getUid()),
+                            )
+                        )
+                )
+            }
+            PaymentType.LIST -> {
+                false
+            }
+            PaymentType.SHIPPING -> {
+                false
+            }
+            PaymentType.TAX -> {
+                false
+            }
+        }
     }
 
     fun isAdminDeliveries(deliveries: List<Long>): Boolean {

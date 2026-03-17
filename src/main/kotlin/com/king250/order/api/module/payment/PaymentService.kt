@@ -1,0 +1,101 @@
+package com.king250.order.api.module.payment
+
+import com.king250.order.api.integration.auth.AuthService
+import com.king250.order.api.integration.jd.CreateUrlRequest
+import com.king250.order.api.integration.jd.JdService
+import com.king250.order.api.util.toJooq
+import com.king250.order.jooq.tables.references.DELIVERY
+import com.king250.order.jooq.tables.references.PAYMENT
+import com.king250.order.jooq.tables.references.USER
+import org.jooq.Condition
+import org.jooq.DSLContext
+import org.jooq.Record
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
+import org.springframework.http.HttpStatus
+import org.springframework.stereotype.Service
+import org.springframework.web.server.ResponseStatusException
+import java.time.Instant
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+
+@Service
+class PaymentService(
+    private val dsl: DSLContext,
+    private val jd: JdService,
+    private val auth: AuthService,
+) {
+    fun findAll(request: QueryPaymentRequest): Page<Record> {
+        val pageable = request.toPageable()
+        val conditions = mutableListOf<Condition>().apply {
+            request.id?.let { add(PAYMENT.ID.eq(it)) }
+            request.type?.let { add(PAYMENT.TYPE.eq(it)) }
+            request.referenceId?.let { add(PAYMENT.REFERENCE_ID.eq(it)) }
+            request.currency?.let { add(PAYMENT.CURRENCY.eq(it)) }
+            request.method?.let { add(PAYMENT.METHOD.eq(it)) }
+            request.isPaid?.let {
+                if (it) {
+                    add(PAYMENT.PAID_AT.isNotNull)
+                } else {
+                    add(PAYMENT.PAID_AT.isNull)
+                }
+            }
+            request.userId?.let {
+                if (!auth.isAdminMember(it)) {
+                    add(PAYMENT.USER_ID.eq(auth.getUid()))
+                } else if (request.userId != null) {
+                    add(PAYMENT.USER_ID.eq(request.userId))
+                }
+            }
+        }
+        val sortMap = mapOf(
+            "id" to PAYMENT.ID,
+            "user_id" to PAYMENT.USER_ID,
+            "type" to PAYMENT.TYPE,
+            "reference_id" to PAYMENT.REFERENCE_ID,
+            "amount" to PAYMENT.AMOUNT,
+            "currency" to PAYMENT.CURRENCY,
+            "method" to PAYMENT.METHOD,
+            "created_at" to PAYMENT.CREATED_AT,
+            "updated_at" to PAYMENT.UPDATED_AT,
+            "paid_at" to PAYMENT.PAID_AT,
+        )
+        val total = dsl.fetchCount(DELIVERY)
+        val records = dsl.select(*PAYMENT.fields(), *USER.fields())
+            .from(PAYMENT)
+            .join(USER).on(PAYMENT.USER_ID.eq(USER.ID))
+            .where(conditions)
+            .orderBy(pageable.sort.toJooq(sortMap))
+            .limit(pageable.pageSize)
+            .offset(pageable.offset)
+            .fetch()
+        return PageImpl(records, pageable, total.toLong())
+    }
+
+    fun findById(paymentId: Long): Record {
+        return dsl.select(*PAYMENT.fields(), *USER.fields())
+            .from(PAYMENT)
+            .join(USER).on(PAYMENT.USER_ID.eq(USER.ID))
+            .where(PAYMENT.ID.eq(paymentId))
+            .fetchSingle()
+    }
+
+    suspend fun payRequest(paymentId: Long): String {
+        val record = findById(paymentId)
+        val payment = record.into(PAYMENT)
+        if (payment.paidAt != null) {
+            throw ResponseStatusException(HttpStatus.CONFLICT, "Payment paid at ${payment.paidAt}")
+        }
+        val time = DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
+            .withZone(ZoneOffset.UTC)
+            .format(Instant.now())
+        val res = jd.getPayUrl(CreateUrlRequest(
+            "$time${payment.id.toString().padStart(18, '0')}",
+            payment.amount.toString()
+        ))
+        if (res.result != "success") {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Payment payment failed")
+        }
+        return res.data.url
+    }
+}

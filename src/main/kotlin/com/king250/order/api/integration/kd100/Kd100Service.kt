@@ -9,9 +9,9 @@ import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.http.*
 import io.ktor.serialization.jackson.*
+import org.apache.commons.codec.digest.DigestUtils
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import org.springframework.util.DigestUtils
 
 @Service
 class Kd100Service(
@@ -28,13 +28,13 @@ class Kd100Service(
             }
         }
     }.apply {
-        this.requestPipeline.intercept(HttpRequestPipeline.Transform) { payload ->
+        requestPipeline.intercept(HttpRequestPipeline.Transform) { payload ->
             if (payload is FormDataContent) {
                 val params = payload.formData
                 val param = params["param"] ?: ""
                 val t = System.currentTimeMillis().toString()
                 val signStr = param + t + properties.key + properties.secret
-                val sign = DigestUtils.md5DigestAsHex(signStr.toByteArray()).uppercase()
+                val sign = DigestUtils.md5Hex(signStr).uppercase()
                 val newParams = Parameters.build {
                     appendAll(params)
                     append("t", t)
