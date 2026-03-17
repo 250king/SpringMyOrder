@@ -25,13 +25,14 @@ repositories {
 }
 
 dependencies {
+    implementation("commons-codec:commons-codec")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("io.ktor:ktor-client-core:3.4.1")
     implementation("io.ktor:ktor-client-okhttp:3.4.1")
     implementation("io.ktor:ktor-client-content-negotiation:3.4.1")
     implementation("io.ktor:ktor-serialization-jackson:3.4.1")
     implementation("io.projectreactor:reactor-core")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.flywaydb:flyway-database-postgresql")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")

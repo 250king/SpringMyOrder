@@ -1,13 +1,15 @@
 package com.king250.order.api.module.group
 
 import com.king250.order.api.integration.auth.AuthService
-import com.king250.order.api.module.user.UserResponse
 import com.king250.order.api.util.toJooq
 import com.king250.order.jooq.enums.GroupRole
 import com.king250.order.jooq.tables.records.GroupRecord
-import com.king250.order.jooq.tables.references.*
+import com.king250.order.jooq.tables.references.GROUP
+import com.king250.order.jooq.tables.references.GROUP_USER
+import com.king250.order.jooq.tables.references.USER
 import org.jooq.Condition
 import org.jooq.DSLContext
+import org.jooq.Record
 import org.jooq.exception.NoDataFoundException
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
@@ -87,12 +89,16 @@ class GroupService(
         }
     }
 
-    fun getMembers(request: QueryMemberRequest, groupId: Long): Page<MemberResponse> {
-        if (!dsl.fetchExists(GROUP.where(GROUP.ID.eq(groupId)))) {
-            throw NoDataFoundException()
-        }
+    fun getMembers(request: QueryMemberRequest, groupId: Long): Page<Record> {
         val pageable = request.toPageable()
-        val conditions = mutableListOf<Condition>()
+        val conditions = mutableListOf<Condition>().apply {
+            add(GROUP_USER.GROUP_ID.eq(groupId))
+            request.id?.let { add(GROUP_USER.USER_ID.eq(it)) }
+            request.role?.let { add(GROUP_USER.ROLE.eq(it)) }
+            request.keyword?.takeIf { it.isNotBlank() }?.let { kw ->
+                add(USER.NAME.containsIgnoreCase(kw).or(USER.QQ.containsIgnoreCase(kw)))
+            }
+        }
         val sortMap = mapOf(
             "id" to USER.ID,
             "user.id" to USER.ID,
@@ -101,35 +107,17 @@ class GroupService(
             "role" to GROUP_USER.ROLE,
             "created_at" to GROUP_USER.CREATED_AT
         )
-        request.id?.let {
-            conditions.add(GROUP_USER.USER_ID.eq(it))
-        }
-        request.keyword?.takeIf { it.isNotBlank() }?.let { kw ->
-            conditions.add(USER.NAME.containsIgnoreCase(kw).or(USER.QQ.containsIgnoreCase(kw)))
-        }
-        request.role?.let {
-            conditions.add(GROUP_USER.ROLE.eq(it))
-        }
-        conditions.add(GROUP_USER.GROUP_ID.eq(groupId))
         val total = dsl.fetchCount(
             GROUP_USER.join(USER).on(USER.ID.eq(GROUP_USER.USER_ID)),
             conditions
         )
         val records = dsl.select(*USER.fields(), *GROUP_USER.fields())
             .from(GROUP_USER)
-            .join(USER)
-            .on(USER.ID.eq(GROUP_USER.USER_ID))
+            .join(USER).on(USER.ID.eq(GROUP_USER.USER_ID))
             .where(conditions)
             .orderBy(pageable.sort.toJooq(sortMap))
-            .limit(pageable.pageSize)
-            .offset(pageable.offset)
-            .fetch { r ->
-                MemberResponse(
-                    user = r.into(USER).into(UserResponse::class.java),
-                    role = r.get(GROUP_USER.ROLE)!!,
-                    createdAt = r.get(GROUP_USER.CREATED_AT)!!
-                )
-            }
+            .limit(pageable.pageSize).offset(pageable.offset)
+            .fetch()
         return PageImpl(records, pageable, total.toLong())
     }
 
@@ -171,7 +159,7 @@ class GroupService(
     */
 
     @Transactional
-    fun changeRole(groupId: Long, userId: Long, role: GroupRole) : MemberResponse {
+    fun changeRole(groupId: Long, userId: Long, role: GroupRole) : Record {
         if (role == GroupRole.OWNER) {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot assign owner role to a member.")
         }
@@ -193,13 +181,7 @@ class GroupService(
             .on(USER.ID.eq(GROUP_USER.USER_ID))
             .where(GROUP_USER.USER_ID.eq(userId))
             .and(GROUP_USER.GROUP_ID.eq(groupId))
-            .fetchSingle { r ->
-                MemberResponse(
-                    user = r.into(USER).into(UserResponse::class.java),
-                    role = r.get(GROUP_USER.ROLE)!!,
-                    createdAt = r.get(GROUP_USER.CREATED_AT)!!
-                )
-            }
+            .fetchSingle()
     }
 
     @Transactional

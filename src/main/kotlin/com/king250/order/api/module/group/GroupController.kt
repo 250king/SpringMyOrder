@@ -57,7 +57,7 @@ class GroupController(
     @PreAuthorize("@auth.isMember(#groupId)")
     fun getMembers(@PathVariable groupId: Long, @Valid request: QueryMemberRequest): ItemResponse<MemberResponse> {
         val users = service.getMembers(request, groupId)
-        return users.toItem()
+        return users.toItem(mapper::toMemberResponse)
     }
 
     @PostMapping("/groups/{groupId}/users")
@@ -77,6 +77,6 @@ class GroupController(
         @Valid @RequestBody request: UpdateMemberRequest
     ): MemberResponse {
         val member = service.changeRole(groupId, userId, request.role)
-        return member
+        return mapper.toMemberResponse(member)
     }
 }

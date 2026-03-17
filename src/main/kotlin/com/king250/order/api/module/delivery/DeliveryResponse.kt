@@ -10,8 +10,6 @@ data class DeliveryResponse(
 
     val user: UserResponse,
 
-    val creator: UserResponse,
-
     val name: String?,
 
     val phone: String?,
@@ -19,6 +17,8 @@ data class DeliveryResponse(
     val address: String?,
 
     val company: DeliveryCompany?,
+
+    val trackingNumber: String?,
 
     val status: DeliveryStatus,
 

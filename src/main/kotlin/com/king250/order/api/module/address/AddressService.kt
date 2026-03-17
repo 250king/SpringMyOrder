@@ -6,7 +6,6 @@ import com.king250.order.jooq.tables.records.AddressRecord
 import com.king250.order.jooq.tables.references.ADDRESS
 import org.jooq.Condition
 import org.jooq.DSLContext
-import org.jooq.exception.NoDataFoundException
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.stereotype.Service
@@ -55,13 +54,6 @@ class AddressService(
     fun findById(id: Long): AddressRecord {
         return dsl.selectFrom(ADDRESS)
             .where(ADDRESS.ID.eq(id))
-            .let {
-                if (auth.isSuperAdmin()) {
-                    it
-                } else {
-                    it.and(ADDRESS.USER_ID.eq(auth.getUid()))
-                }
-            }
             .fetchSingle()
     }
 
@@ -84,15 +76,8 @@ class AddressService(
 
     @Transactional
     fun deleteById(id: Long) {
-        val condition = ADDRESS.ID.eq(id).let {
-            if (auth.isSuperAdmin()) {
-                it
-            } else {
-                it.and(ADDRESS.USER_ID.eq(auth.getUid()))
-            }
-        }
-        if (dsl.deleteFrom(ADDRESS).where(condition).execute() == 0) {
-            throw NoDataFoundException()
-        }
+        dsl.deleteFrom(ADDRESS)
+            .where(ADDRESS.ID.eq(id))
+            .execute()
     }
 }

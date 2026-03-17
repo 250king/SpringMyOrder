@@ -6,10 +6,10 @@ import com.king250.order.api.integration.kd100.Kd100Service
 import com.king250.order.api.module.address.AddressService
 import com.king250.order.api.util.toJooq
 import com.king250.order.jooq.enums.DeliveryCompany
-import com.king250.order.jooq.enums.GroupRole
-import com.king250.order.jooq.enums.ListStatus
 import com.king250.order.jooq.tables.records.DeliveryRecord
-import com.king250.order.jooq.tables.references.*
+import com.king250.order.jooq.tables.references.DELIVERY
+import com.king250.order.jooq.tables.references.DELIVERY_LIST
+import com.king250.order.jooq.tables.references.USER
 import kotlinx.coroutines.*
 import org.jooq.Condition
 import org.jooq.DSLContext
@@ -17,7 +17,7 @@ import org.jooq.Record
 import org.jooq.impl.DSL
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
-import org.springframework.security.access.AccessDeniedException
+import org.springframework.security.authorization.AuthorizationDeniedException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -35,30 +35,8 @@ class DeliveryService(
         DeliveryCompany.JD to "jd"
     )
 
-    private val creator = USER.`as`("creator")
-
     @Transactional
-    internal fun checkListAvailable(lists: List<Long>): Set<Long?> {
-        if (auth.isSuperAdmin()) {
-            return lists.toSet()
-        }
-        val filter = dsl.select(LIST.ID)
-            .from(LIST)
-            .join(ITEM).on(ITEM.ID.eq(LIST.ITEM_ID))
-            .join(GROUP_USER).on(GROUP_USER.GROUP_ID.eq(ITEM.GROUP_ID))
-            .where(LIST.ID.`in`(lists))
-            .and(LIST.STATUS.eq(ListStatus.ARRIVED))
-            .and(GROUP_USER.USER_ID.eq(auth.getUid()))
-            .and(GROUP_USER.ROLE.eq(GroupRole.OWNER))
-            .fetchSet(LIST.ID)
-        if (filter.size != lists.toSet().size) {
-            throw AccessDeniedException("Some lists are not accessible")
-        }
-        return filter
-    }
-
-    @Transactional
-    internal fun insertListToDelivery(deliveryId: Long, lists: Set<Long?>): Int {
+    internal fun insertListToDelivery(deliveryId: Long, lists: List<Long?>): Int {
         val inserts = lists.map { list ->
             dsl.insertInto(DELIVERY_LIST)
                 .set(DELIVERY_LIST.DELIVERY_ID, deliveryId)
@@ -68,29 +46,15 @@ class DeliveryService(
         return dsl.batch(inserts).execute().filter { it == 1 }.size
     }
 
-    @Transactional
-    internal fun isInGroup(userId: Long, creatorId: Long): Boolean {
-
-    }
-
     fun findAll(request: QueryDeliveryRequest): Page<Record> {
         val pageable = request.toPageable()
         val conditions = mutableListOf<Condition>().apply {
+            request.company?.let { add(DELIVERY.COMPANY.eq(it)) }
+            request.status?.let { add(DELIVERY.STATUS.eq(it)) }
             if (!auth.isSuperAdmin()) {
-                add(DELIVERY.USER_ID.eq(auth.getUid()).or(DELIVERY.CREATOR_ID.eq(auth.getUid())))
-            } else {
-                request.userId?.let {
-                    add(DELIVERY.USER_ID.eq(it))
-                }
-                request.creatorId?.let {
-                    add(DELIVERY.CREATOR_ID.eq(it))
-                }
-            }
-            request.company?.let {
-                add(DELIVERY.COMPANY.eq(it))
-            }
-            request.status?.let {
-                add(DELIVERY.STATUS.eq(it))
+                add(DELIVERY.USER_ID.eq(auth.getUid()))
+            } else if (request.userId != null) {
+                add(DELIVERY.USER_ID.eq(request.userId))
             }
             request.keyword?.takeIf { it.isNotBlank() }?.let { kw ->
                 add(DELIVERY.NAME.containsIgnoreCase(kw)
@@ -104,7 +68,6 @@ class DeliveryService(
         val sortMap = mapOf(
             "id" to DELIVERY.ID,
             "user_id" to DELIVERY.USER_ID,
-            "creator_id" to DELIVERY.CREATOR_ID,
             "name" to DELIVERY.NAME,
             "phone" to DELIVERY.PHONE,
             "address" to DELIVERY.ADDRESS,
@@ -114,42 +77,26 @@ class DeliveryService(
             "updated_at" to DELIVERY.UPDATED_AT,
         )
         val total = dsl.fetchCount(DELIVERY, conditions)
-        val records = dsl.select(*USER.fields(), *creator.fields(), *DELIVERY.fields())
+        val records = dsl.select(*USER.fields(), *DELIVERY.fields())
             .from(DELIVERY)
-            .join(USER)
-            .on(USER.ID.eq(DELIVERY.USER_ID))
-            .join(creator)
-            .on(creator.ID.eq(DELIVERY.CREATOR_ID))
+            .join(USER).on(USER.ID.eq(DELIVERY.USER_ID))
             .where(conditions)
             .orderBy(pageable.sort.toJooq(sortMap))
-            .limit(pageable.pageSize)
-            .offset(pageable.offset)
+            .limit(pageable.pageSize).offset(pageable.offset)
             .fetch()
          return PageImpl(records, pageable, total.toLong())
     }
 
     fun findById(id: Long): Record {
-        return dsl.select(*USER.fields(), *creator.fields(), *DELIVERY.fields())
+        return dsl.select(*USER.fields(), *DELIVERY.fields())
             .from(DELIVERY)
-            .join(USER)
-            .on(USER.ID.eq(DELIVERY.USER_ID))
-            .join(creator)
-            .on(creator.ID.eq(DELIVERY.CREATOR_ID))
+            .join(USER).on(USER.ID.eq(DELIVERY.USER_ID))
             .where(DELIVERY.ID.eq(id))
-            .and(
-                if (auth.isSuperAdmin()) {
-                    DSL.noCondition()
-                } else {
-                    DSL.or(
-                        DELIVERY.USER_ID.eq(auth.getUid()),
-                        DELIVERY.CREATOR_ID.eq(auth.getUid())
-                    )
-                }
-            ).fetchSingle()
+            .fetchSingle()
     }
 
     @Transactional
-    fun save(delivery: DeliveryRecord, addressId: Long?, lists: List<Long> = emptyList()): DeliveryRecord {
+    fun save(delivery: DeliveryRecord, addressId: Long?, lists: List<Long> = emptyList()): Record {
         addressId?.let { id ->
             try {
                 val result = address.findById(id)
@@ -158,27 +105,23 @@ class DeliveryService(
                 delivery.address = result.address
             } catch (_: Exception) { }
         }
-        if (delivery.id == null) {
-            val t1 = GROUP_USER.`as`("t1")
-            val t2 = GROUP_USER.`as`("t2")
-
-            delivery.creatorId = if (auth.isSuperAdmin() && delivery.creatorId != null) {
-                delivery.creatorId
-            } else {
-                auth.getUid()
+        val id = if (delivery.id == null) {
+            if (!auth.isSuperAdmin() || delivery.userId == null) {
+                delivery.userId = auth.getUid()
             }
-            val filter = checkListAvailable(lists)
-            val inserted = dsl.insertInto(DELIVERY)
+            val insertedId = dsl.insertInto(DELIVERY)
                 .set(delivery)
-                .returning()
-                .fetchOne()!!
-            insertListToDelivery(inserted.id!!, filter)
-            return inserted
+                .returning(DELIVERY.ID)
+                .fetchSingle()
+                .id!!
+            insertListToDelivery(insertedId, lists)
+            insertedId
         } else {
             dsl.attach(delivery)
             delivery.store()
-            return delivery
+            delivery.id!!
         }
+        return findById(id)
     }
 
     suspend fun pushDelivery(request: PushDeliveryRequest): Int {
@@ -186,17 +129,6 @@ class DeliveryService(
         val filter = withContext(Dispatchers.IO) {
             dsl.selectFrom(DELIVERY)
                 .where(DELIVERY.ID.`in`(request.deliveries))
-                .and(
-                    if (auth.isSuperAdmin()) {
-                        DSL.noCondition()
-                    }
-                    else {
-                        DSL.or(
-                            DELIVERY.USER_ID.eq(auth.getUid()),
-                            DELIVERY.CREATOR_ID.eq(auth.getUid())
-                        )
-                    }
-                )
                 .and(
                     DSL.exists(
                         dsl.selectOne()
@@ -211,7 +143,7 @@ class DeliveryService(
                 .fetch()
         }
         if (filter.size != request.deliveries.toSet().size) {
-            throw AccessDeniedException("Some lists are not accessible")
+            throw AuthorizationDeniedException("Some lists information are not incompleted")
         }
         val results = coroutineScope {
             filter.map { delivery ->

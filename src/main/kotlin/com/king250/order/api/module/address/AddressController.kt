@@ -4,6 +4,7 @@ import com.king250.order.api.common.ItemResponse
 import com.king250.order.api.util.toItem
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 
 @RestController
@@ -25,12 +26,14 @@ class AddressController(
     }
 
     @GetMapping("/addresses/{addressId}")
+    @PreAuthorize("@auth.isSelfAddress(#addressId)")
     fun findById(@PathVariable addressId: Long): AddressResponse {
         val address = service.findById(addressId)
         return mapper.toResponse(address)
     }
 
     @PatchMapping("/addresses/{addressId}")
+    @PreAuthorize("@auth.isSelfAddress(#addressId)")
     fun update(@PathVariable addressId: Long, @Valid @RequestBody request: UpdateAddressRequest): AddressResponse {
         val address = service.findById(addressId)
         mapper.updateEntity(request, address)
@@ -38,6 +41,7 @@ class AddressController(
     }
 
     @DeleteMapping("/addresses/{addressId}")
+    @PreAuthorize("@auth.isSelfAddress(#addressId)")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun deleteById(@PathVariable addressId: Long) {
         service.deleteById(addressId)

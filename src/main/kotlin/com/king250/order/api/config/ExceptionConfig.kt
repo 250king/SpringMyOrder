@@ -73,6 +73,10 @@ class ExceptionConfig(
                     }
                 }
             }
+            matcher.match("/deliveries", uri) -> {
+                status = 403
+                message = e.message ?: "You don't have permission to perform this action."
+            }
         }
         response.sendError(status, message)
     }
