@@ -6,11 +6,30 @@ spring:
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/SpringMyOrder}
     username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:0d000721}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
   application:
     name: SpringMyOrder
-
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${AC_URI}
+          jws-algorithms: ES256
 server:
   error:
     include-message: always
+app:
+  napcat:
+    url: ${NAPCAT_URL}
+    token: ${NAPCAT_TOKEN}
+  kd100:
+    key: ${EXPRESS_KEY}
+    secret: ${EXPRESS_SECRET}
+    webhook: ${EXPRESS_WEBHOOK}
+  jd:
+    key: ${JD_KEY}
+    secret: ${JD_SECRET}
+    customer-id: ${JD_CUSTOMER_ID}
+    shop-id: ${JD_SHOP_ID}
+    webhook: ${JD_WEBHOOK}
