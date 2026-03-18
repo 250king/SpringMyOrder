@@ -22,7 +22,7 @@ val JdSignPlugin = createClientPlugin("JdAuth", ::JdPluginConfig) {
     transformRequestBody { request, _, _ ->
         val timestamp = (System.currentTimeMillis() / 1000).toString()
         val path = request.url.encodedPath
-        var signStr = "secret=$secretKey&timestamp=$timestamp&path=$path"
+        var signStr = "secretKey=$secretKey&timestamp=$timestamp&path=$path"
         if (request.method == HttpMethod.Post) {
             val jsonBody = mapper.writeValueAsString(request.body)
             signStr += "&body=$jsonBody"

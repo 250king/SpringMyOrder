@@ -9,6 +9,7 @@ import com.king250.order.jooq.tables.references.USER
 import org.jooq.Condition
 import org.jooq.DSLContext
 import org.jooq.Record
+import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.http.HttpStatus
@@ -26,6 +27,8 @@ class PaymentService(
     private val jd: JdService,
     private val auth: AuthService,
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
+
     fun findAll(request: QueryPaymentRequest): Page<Record> {
         val pageable = request.toPageable()
         val conditions = mutableListOf<Condition>().apply {
@@ -91,7 +94,7 @@ class PaymentService(
         val amount = payment.let { p ->
             val amount = p.amount ?: BigDecimal.ZERO
             val rate = p.currencyRate ?: BigDecimal.ONE
-            val feeRate = "0.0038".toBigDecimal()
+            val feeRate = "1.0038".toBigDecimal()
             (amount * rate * feeRate).setScale(2, RoundingMode.HALF_UP)
         }
         val res = jd.getPayUrl(CreateUrlRequest(
@@ -99,6 +102,7 @@ class PaymentService(
             amount.toString()
         ))
         if (res.result != "success") {
+            log.error("Failed to get payment url for payment $paymentId: $res")
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Payment payment failed")
         }
         payment.requestId = "$time${payment.id.toString().padStart(18, '0')}"
