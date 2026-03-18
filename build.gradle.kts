@@ -1,4 +1,5 @@
 import org.gradle.kotlin.dsl.withType
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "2.2.21"
@@ -106,6 +107,10 @@ flyway {
     url = project.property("db_url") as String
     user = project.property("db_username") as String
     password = project.property("db_password") as String
+}
+
+tasks.withType<KotlinCompile>().configureEach {
+    dependsOn("jooqCodegen")
 }
 
 tasks.withType<Test> {

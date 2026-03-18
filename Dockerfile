@@ -4,7 +4,7 @@ WORKDIR /app
 
 # 只拷贝 Gradle 相关文件，利用 Docker 缓存层优化下载速度
 COPY gradle gradle
-COPY gradlew build.gradle.kts settings.gradle.kts ./
+COPY gradlew build.gradle.kts settings.gradle.kts gradle.properties ./
 RUN ./gradlew dependencies --no-daemon
 
 # 拷贝源代码并打包
