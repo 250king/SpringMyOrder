@@ -18,6 +18,7 @@ class UserController(
     private val service: UserService,
     private val mapper: UserMapper,
     private val objectMapper: ObjectMapper,
+    private val auth: AuthService
 ) {
     @GetMapping("/users")
     @PreAuthorize("@auth.isSuperAdmin()")
@@ -79,13 +80,13 @@ class UserController(
     }
 
     @GetMapping("/me")
-    fun getMe(auth: AuthService): UserResponse {
+    fun getMe(): UserResponse {
         val user = service.findById(auth.getUid())
         return mapper.toResponse(user)
     }
 
     @PatchMapping("/me")
-    fun updateMe(auth: AuthService, @Valid @RequestBody request: UpdateUserRequest): UserResponse {
+    fun updateMe(@Valid @RequestBody request: UpdateUserRequest): UserResponse {
         val user = service.findById(auth.getUid())
         mapper.updateEntity(request, user)
         return mapper.toResponse(service.save(user))
