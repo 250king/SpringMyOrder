@@ -106,7 +106,8 @@ class AuthService(
                     dsl.selectOne()
                         .from(DELIVERY)
                         .join(DELIVERY_LIST).on(DELIVERY_LIST.DELIVERY_ID.eq(DELIVERY.ID))
-                        .join(ITEM).on(ITEM.ID.eq(DELIVERY_LIST.LIST_ID))
+                        .join(LIST).on(LIST.ID.eq(DELIVERY_LIST.LIST_ID))
+                        .join(ITEM).on(ITEM.ID.eq(LIST.ITEM_ID))
                         .join(GROUP).on(GROUP.ID.eq(ITEM.GROUP_ID))
                         .where(DELIVERY.ID.eq(payment.referenceId!!))
                         .and(
@@ -156,9 +157,12 @@ class AuthService(
             .fetch().size == lists.toSet().size
     }
 
-    fun isAdminMember(uid: Long): Boolean {
+    fun isAdminMember(uid: Long?): Boolean {
         if (isSuperAdmin()) {
             return true
+        }
+        if (uid == null) {
+            return false
         }
         if (uid == getUid()) {
             return true

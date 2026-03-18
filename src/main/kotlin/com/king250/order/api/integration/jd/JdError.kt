@@ -4,6 +4,6 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies
 import com.fasterxml.jackson.databind.annotation.JsonNaming
 
 @JsonNaming(PropertyNamingStrategies.LowerCaseStrategy::class)
-data class CreateUrlResponse(
-    val url: String,
+data class JdError(
+    val errorCode: String,
 )

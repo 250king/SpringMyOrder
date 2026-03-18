@@ -59,9 +59,9 @@ class DeliveryService(
                     .or(DELIVERY.TRACKING_NUMBER.containsIgnoreCase(kw))
                 )
             }
-            if (request.userId != null && auth.isAdminMember(request.userId!!)) {
+            if (auth.isAdminMember(request.userId!!)) {
                 add(DELIVERY.USER_ID.eq(request.userId))
-            } else {
+            } else if (request.userId != null) {
                 add(DELIVERY.USER_ID.eq(auth.getUid()))
             }
         }

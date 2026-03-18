@@ -13,7 +13,7 @@ data class PaymentResponse(
 
     val type: PaymentType,
 
-    val referenceID: Long,
+    val referenceId: Long,
 
     val amount: BigDecimal,
 

@@ -4,7 +4,6 @@ import com.king250.order.api.integration.auth.AuthService
 import com.king250.order.api.integration.jd.CreateUrlRequest
 import com.king250.order.api.integration.jd.JdService
 import com.king250.order.api.util.toJooq
-import com.king250.order.jooq.tables.references.DELIVERY
 import com.king250.order.jooq.tables.references.PAYMENT
 import com.king250.order.jooq.tables.references.USER
 import org.jooq.Condition
@@ -15,6 +14,8 @@ import org.springframework.data.domain.PageImpl
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
@@ -40,12 +41,10 @@ class PaymentService(
                     add(PAYMENT.PAID_AT.isNull)
                 }
             }
-            request.userId?.let {
-                if (!auth.isAdminMember(it)) {
-                    add(PAYMENT.USER_ID.eq(auth.getUid()))
-                } else if (request.userId != null) {
-                    add(PAYMENT.USER_ID.eq(request.userId))
-                }
+            if (!auth.isAdminMember(request.userId)) {
+                add(PAYMENT.USER_ID.eq(auth.getUid()))
+            } else if (request.userId != null) {
+                add(PAYMENT.USER_ID.eq(request.userId))
             }
         }
         val sortMap = mapOf(
@@ -60,7 +59,7 @@ class PaymentService(
             "updated_at" to PAYMENT.UPDATED_AT,
             "paid_at" to PAYMENT.PAID_AT,
         )
-        val total = dsl.fetchCount(DELIVERY)
+        val total = dsl.fetchCount(PAYMENT, conditions)
         val records = dsl.select(*PAYMENT.fields(), *USER.fields())
             .from(PAYMENT)
             .join(USER).on(PAYMENT.USER_ID.eq(USER.ID))
@@ -80,7 +79,7 @@ class PaymentService(
             .fetchSingle()
     }
 
-    suspend fun payRequest(paymentId: Long): String {
+    suspend fun payRequest(paymentId: Long): String? {
         val record = findById(paymentId)
         val payment = record.into(PAYMENT)
         if (payment.paidAt != null) {
@@ -89,13 +88,22 @@ class PaymentService(
         val time = DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
             .withZone(ZoneOffset.UTC)
             .format(Instant.now())
+        val amount = payment.let { p ->
+            val amount = p.amount ?: BigDecimal.ZERO
+            val rate = p.currencyRate ?: BigDecimal.ONE
+            val feeRate = "0.0038".toBigDecimal()
+            (amount * rate * feeRate).setScale(2, RoundingMode.HALF_UP)
+        }
         val res = jd.getPayUrl(CreateUrlRequest(
             "$time${payment.id.toString().padStart(18, '0')}",
-            payment.amount.toString()
+            amount.toString()
         ))
         if (res.result != "success") {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Payment payment failed")
         }
-        return res.data.url
+        payment.requestId = "$time${payment.id.toString().padStart(18, '0')}"
+        dsl.attach(payment)
+        payment.store()
+        return res.data?.url
     }
 }
