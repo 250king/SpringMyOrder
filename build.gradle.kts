@@ -33,6 +33,7 @@ dependencies {
     implementation("io.ktor:ktor-client-okhttp:3.4.1")
     implementation("io.ktor:ktor-client-content-negotiation:3.4.1")
     implementation("io.ktor:ktor-serialization-jackson:3.4.1")
+    implementation("io.ktor:ktor-client-logging:3.4.1")
     implementation("io.projectreactor:reactor-core")
     implementation("org.flywaydb:flyway-database-postgresql")
     implementation("org.jetbrains.kotlin:kotlin-reflect")

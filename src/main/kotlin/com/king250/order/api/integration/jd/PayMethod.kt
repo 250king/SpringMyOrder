@@ -1,0 +1,12 @@
+package com.king250.order.api.integration.jd
+
+enum class PayMethod {
+    GUOTONG_PAY_ALIPAY,
+    GUOTONG_PAY_ALIPAY_SCAN,
+    GUOTONG_PAY_WX,
+    GUOTONG_PAY_WX_SCAN,
+    GUOTONG_PAY_UNIONPAY,
+    GUOTONG_PAY_UNIONPAY_SCAN,
+    GUOTONG_PAY_JD,
+    GUOTONG_PAY_JD_SCAN,
+}

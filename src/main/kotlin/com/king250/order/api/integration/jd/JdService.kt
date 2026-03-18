@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.*
+import io.ktor.client.plugins.logging.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import org.slf4j.LoggerFactory
@@ -21,6 +22,9 @@ class JdService(
         defaultRequest {
             url("https://openapi.duolabao.com/v1/")
         }
+        install(Logging) {
+            level = LogLevel.ALL
+        }
         install(JdSignPlugin) {
             key = properties.key
             secret = properties.secret
@@ -28,7 +32,17 @@ class JdService(
         }
     }
 
-    suspend fun getPayUrl(request: CreateUrlRequest): JdResponse<CreateUrlResponse> {
+    suspend fun getOrder(requestId: String): JdResponse<OrderResponse> {
+        try {
+            return client.get("customer/order/payresult/${properties.customerId}/${properties.shopId}/$requestId")
+                .body()
+        } catch (e: Exception) {
+            log.error("Failed to get order detail for requestId $requestId", e)
+            throw e
+        }
+    }
+
+    suspend fun getPayUrl(request: CreateUrlRequest): JdResponse<UrlResponse> {
         request.customerNum = properties.customerId
         request.shopNum = properties.shopId
         request.callbackUrl = properties.webhook
