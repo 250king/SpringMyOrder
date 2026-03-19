@@ -4,10 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.*
-import io.ktor.client.plugins.logging.*
 import io.ktor.client.request.*
 import io.ktor.http.*
-import org.slf4j.LoggerFactory
+import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.stereotype.Service
 
 @Service
@@ -16,14 +15,9 @@ class JdService(
     private val properties: JdProperties,
     private val objectMapper: ObjectMapper
 ) {
-    private val log = LoggerFactory.getLogger(javaClass)
-
     private val client = ktor.config {
         defaultRequest {
             url("https://openapi.duolabao.com/v1/")
-        }
-        install(Logging) {
-            level = LogLevel.ALL
         }
         install(JdSignPlugin) {
             key = properties.key
@@ -33,27 +27,22 @@ class JdService(
     }
 
     suspend fun getOrder(requestId: String): JdResponse<OrderResponse> {
-        try {
-            return client.get("customer/order/payresult/${properties.customerId}/${properties.shopId}/$requestId")
-                .body()
-        } catch (e: Exception) {
-            log.error("Failed to get order detail for requestId $requestId", e)
-            throw e
-        }
+        return client.get("customer/order/payresult/${properties.customerId}/${properties.shopId}/$requestId")
+            .body()
     }
 
     suspend fun getPayUrl(request: CreateUrlRequest): JdResponse<UrlResponse> {
         request.customerNum = properties.customerId
         request.shopNum = properties.shopId
         request.callbackUrl = properties.webhook
-        try {
-            return client.post("customer/order/payurl/create") {
-                contentType(ContentType.Application.Json)
-                setBody(request)
-            }.body()
-        } catch (e: Exception) {
-            log.error("Failed to create pay url for requestId ${request.requestNum} and amount ${request.amount}", e)
-            throw e
-        }
+        return client.post("customer/order/payurl/create") {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }.body()
+    }
+
+    fun checkSignature(timestamp: String, token: String): Boolean {
+        val signStr = "secretKey=${properties.secret}&timestamp=${timestamp}"
+        return token == DigestUtils.sha1Hex(signStr).uppercase()
     }
 }

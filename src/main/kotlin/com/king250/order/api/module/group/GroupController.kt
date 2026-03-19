@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.king250.order.api.common.ItemResponse
 import com.king250.order.api.util.toItem
 import jakarta.validation.Valid
+import org.springdoc.core.annotations.ParameterObject
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
@@ -16,7 +17,7 @@ class GroupController(
     private val objectMapper: ObjectMapper
 ) {
     @GetMapping("/groups")
-    fun findAll(@Valid request: QueryGroupRequest): ItemResponse<GroupResponse> {
+    fun findAll(@Valid @ParameterObject request: QueryGroupRequest): ItemResponse<GroupResponse> {
         val groups = service.findAll(request)
         return groups.toItem(mapper::toResponse)
     }
@@ -55,7 +56,10 @@ class GroupController(
 
     @GetMapping("/groups/{groupId}/users")
     @PreAuthorize("@auth.isMember(#groupId)")
-    fun getMembers(@PathVariable groupId: Long, @Valid request: QueryMemberRequest): ItemResponse<MemberResponse> {
+    fun getMembers(
+        @PathVariable groupId: Long,
+        @Valid @ParameterObject request: QueryMemberRequest
+    ): ItemResponse<MemberResponse> {
         val users = service.getMembers(request, groupId)
         return users.toItem(mapper::toMemberResponse)
     }

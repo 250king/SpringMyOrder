@@ -5,7 +5,7 @@ import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.forms.*
 import io.ktor.http.*
-import org.slf4j.LoggerFactory
+import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.stereotype.Service
 
 @Service
@@ -14,8 +14,6 @@ class Kd100Service(
     private val objectMapper: ObjectMapper,
     private val properties: Kd100Properties
 ) {
-    private val log = LoggerFactory.getLogger(javaClass)
-
     private val client = ktor.config {
         install(Kd100SignPlugin) {
             key = properties.key
@@ -25,17 +23,22 @@ class Kd100Service(
 
     suspend fun createOrder(data: CreateOrderRequest): Kd100Response<OrderResponse> {
         data.callBackUrl = properties.webhook
-        try {
-            return client.submitForm(
-                url = "https://order.kuaidi100.com/order/corderapi.do",
-                formParameters = parameters {
-                    append("method", "cOrder")
-                    append("param", objectMapper.writeValueAsString(data))
-                }
-            ).body()
-        } catch (e: Exception) {
-            log.error("Kd100 API call failed with data $data", e)
-            throw e
-        }
+        data.salt = properties.salt
+        return client.submitForm(
+            url = "https://order.kuaidi100.com/order/corderapi.do",
+            formParameters = parameters {
+                append("method", "cOrder")
+                append("param", objectMapper.writeValueAsString(data))
+            }
+        ).body()
+    }
+
+    fun checkSignature(data: String, sign: String): Boolean {
+        val signStr = "$data${properties.salt}"
+        return sign == DigestUtils.md5Hex(signStr).uppercase()
+    }
+
+    fun parseData(data: String): WebhookRequest {
+        return objectMapper.readValue(data, WebhookRequest::class.java)
     }
 }

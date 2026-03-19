@@ -1,0 +1,8 @@
+**/*local.yaml
+.git
+.idea
+.kotlin
+.gradle
+build
+**/*.md
+**/*.iml

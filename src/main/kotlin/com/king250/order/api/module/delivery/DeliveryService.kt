@@ -3,9 +3,11 @@ package com.king250.order.api.module.delivery
 import com.king250.order.api.integration.auth.AuthService
 import com.king250.order.api.integration.kd100.CreateOrderRequest
 import com.king250.order.api.integration.kd100.Kd100Service
+import com.king250.order.api.integration.kd100.Status.*
 import com.king250.order.api.module.address.AddressService
 import com.king250.order.api.util.toJooq
 import com.king250.order.jooq.enums.DeliveryCompany
+import com.king250.order.jooq.enums.DeliveryStatus
 import com.king250.order.jooq.tables.records.DeliveryRecord
 import com.king250.order.jooq.tables.references.DELIVERY
 import com.king250.order.jooq.tables.references.DELIVERY_LIST
@@ -15,11 +17,14 @@ import org.jooq.Condition
 import org.jooq.DSLContext
 import org.jooq.Record
 import org.jooq.impl.DSL
+import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
+import org.springframework.http.HttpStatus
 import org.springframework.security.authorization.AuthorizationDeniedException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.server.ResponseStatusException
 
 @Service
 class DeliveryService(
@@ -28,6 +33,8 @@ class DeliveryService(
     private val kd100: Kd100Service,
     private val address: AddressService,
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
+
     private val companyMap = mapOf(
         DeliveryCompany.SF to "shunfeng",
         DeliveryCompany.YTO to "yuantong",
@@ -124,6 +131,29 @@ class DeliveryService(
         return findById(id)
     }
 
+    suspend fun webhook(taskId: String, data: String, sign: String) {
+        if (!kd100.checkSignature(data, sign)) {
+            throw AuthorizationDeniedException("Invalid signature")
+        }
+        try {
+            val result = kd100.parseData(data)
+            val payment = withContext(Dispatchers.IO) {
+                dsl.selectFrom(DELIVERY).where(DELIVERY.TASK_ID.eq(taskId)).fetchSingle()
+            }
+            payment.trackingNumber = result.kuaidinum
+            payment.status = when(result.status) {
+                PICKED_UP -> DeliveryStatus.DELIVERED
+                SIGNED -> DeliveryStatus.ARRIVED
+                CANCELLED, CANCELLED_BY_USER -> DeliveryStatus.CANCELED
+                else -> payment.status
+            }
+            payment.store()
+        } catch (e: Exception) {
+            log.error("Failed to parse webhook data: ${e.message}")
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST)
+        }
+    }
+
     suspend fun pushDelivery(request: PushDeliveryRequest): Int {
         val result = address.findById(request.addressId)
         val filter = withContext(Dispatchers.IO) {
@@ -159,9 +189,11 @@ class DeliveryService(
                             sendManPrintAddr = result.address!!,
                             cargo = request.type
                         ))
+                    }.onFailure {
+                        log.error("Failed to create order for delivery ${delivery.id}: ${it.message}")
                     }.getOrNull()
                 }
-            }.awaitAll()
+            }.awaitAll().filterNot { it == null }
         }
         return withContext(Dispatchers.IO) {
             dsl.transactionResult { configuration ->
@@ -173,6 +205,7 @@ class DeliveryService(
                         delivery.trackingNumber = response.data.kuaidinum
                         delivery.orderId = response.data.orderId
                         delivery.taskId = response.data.taskId
+                        delivery.status = DeliveryStatus.PUSHED
                         delivery.store()
                         total ++
                     }

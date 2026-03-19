@@ -10,5 +10,5 @@ data class OrderResponse(
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     val completeTime: Instant,
 
-    val payWayEnum: PayMethod,
+    val payWayEnum: Method,
 )

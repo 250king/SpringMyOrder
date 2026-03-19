@@ -5,12 +5,12 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.king250.order.api.common.ItemResponse
 import com.king250.order.api.util.toItem
 import jakarta.validation.Valid
+import org.springdoc.core.annotations.ParameterObject
+import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 
+@Suppress("UastIncorrectHttpHeaderInspection")
 @RestController
 class PaymentController(
     private val service: PaymentService,
@@ -18,9 +18,19 @@ class PaymentController(
     private val objectMapper: ObjectMapper
 ) {
     @GetMapping("/payments")
-    fun findAll(@Valid request: QueryPaymentRequest): ItemResponse<PaymentResponse> {
+    fun findAll(@Valid @ParameterObject request: QueryPaymentRequest): ItemResponse<PaymentResponse> {
         val payments = service.findAll(request)
         return payments.toItem(mapper::toResponse)
+    }
+
+    @GetMapping("/payments/webhook")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    suspend fun webhook(
+        @RequestHeader("timestamp") timestamp: String,
+        @RequestHeader("token") token: String,
+        @RequestParam requestNum: String,
+    ) {
+        service.webhook(timestamp, token, requestNum)
     }
 
     @GetMapping("/payments/{paymentId}")

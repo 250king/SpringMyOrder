@@ -3,7 +3,9 @@ package com.king250.order.api.module.payment
 import com.king250.order.api.integration.auth.AuthService
 import com.king250.order.api.integration.jd.CreateUrlRequest
 import com.king250.order.api.integration.jd.JdService
+import com.king250.order.api.integration.jd.Method
 import com.king250.order.api.util.toJooq
+import com.king250.order.jooq.enums.PaymentMethod
 import com.king250.order.jooq.tables.references.PAYMENT
 import com.king250.order.jooq.tables.references.USER
 import org.jooq.Condition
@@ -13,6 +15,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.http.HttpStatus
+import org.springframework.security.authorization.AuthorizationDeniedException
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
 import java.math.BigDecimal
@@ -80,6 +83,28 @@ class PaymentService(
             .join(USER).on(PAYMENT.USER_ID.eq(USER.ID))
             .where(PAYMENT.ID.eq(paymentId))
             .fetchSingle()
+    }
+
+    suspend fun webhook(timestamp: String, token: String, requestId: String) {
+        if (!jd.checkSignature(timestamp, token)) {
+            throw AuthorizationDeniedException("Invalid signature")
+        }
+        val result = jd.getOrder(requestId)
+        if (result.result != "success") {
+            log.error("Failed to get order for request $requestId: $result")
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Failed to get order")
+        }
+        result.data?.let {
+            val payment = dsl.selectFrom(PAYMENT).where(PAYMENT.ID.eq(PAYMENT.ID)).fetchSingle()
+            payment.paidAt = it.completeTime
+            payment.method = when (it.payWayEnum) {
+                Method.GUOTONG_PAY_ALIPAY, Method.GUOTONG_PAY_ALIPAY_SCAN -> PaymentMethod.ALIPAY
+                Method.GUOTONG_PAY_WX, Method.GUOTONG_PAY_WX_SCAN -> PaymentMethod.WECHAT
+                Method.GUOTONG_PAY_UNIONPAY, Method.GUOTONG_PAY_UNIONPAY_SCAN -> PaymentMethod.UNIONPAY
+                Method.GUOTONG_PAY_JD, Method.GUOTONG_PAY_JD_SCAN -> PaymentMethod.JDPAY
+            }
+            payment.store()
+        }
     }
 
     suspend fun payRequest(paymentId: Long): String? {

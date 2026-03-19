@@ -13,6 +13,9 @@ data class Kd100Properties(
     val secret: String,
 
     @field:NotBlank
+    val salt: String,
+
+    @field:NotBlank
     @field:URL
     val webhook: String,
 )

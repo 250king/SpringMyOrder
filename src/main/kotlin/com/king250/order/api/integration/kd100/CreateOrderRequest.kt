@@ -21,5 +21,7 @@ data class CreateOrderRequest(
 
     val cargo: String,
 
-    var callBackUrl: String? = null
+    var callBackUrl: String? = null,
+
+    var salt: String? = null
 )

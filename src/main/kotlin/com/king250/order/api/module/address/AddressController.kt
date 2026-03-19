@@ -3,6 +3,7 @@ package com.king250.order.api.module.address
 import com.king250.order.api.common.ItemResponse
 import com.king250.order.api.util.toItem
 import jakarta.validation.Valid
+import org.springdoc.core.annotations.ParameterObject
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
@@ -13,7 +14,7 @@ class AddressController(
     private val mapper: AddressMapper,
 ) {
     @GetMapping("/addresses")
-    fun findAll(@Valid request: QueryAddressRequest): ItemResponse<AddressResponse> {
+    fun findAll(@Valid @ParameterObject request: QueryAddressRequest): ItemResponse<AddressResponse> {
         val addresses = service.findAll(request)
         return addresses.toItem(mapper::toResponse)
     }

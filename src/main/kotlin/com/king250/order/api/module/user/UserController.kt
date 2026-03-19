@@ -7,6 +7,7 @@ import com.king250.order.api.integration.auth.AuthService
 import com.king250.order.api.util.toItem
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Pattern
+import org.springdoc.core.annotations.ParameterObject
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
@@ -22,7 +23,7 @@ class UserController(
 ) {
     @GetMapping("/users")
     @PreAuthorize("@auth.isSuperAdmin()")
-    fun findAll(@Valid request: QueryUserRequest): ItemResponse<UserResponse> {
+    fun findAll(@Valid @ParameterObject request: QueryUserRequest): ItemResponse<UserResponse> {
         val users = service.findAll(request)
         return users.toItem(mapper::toResponse)
     }

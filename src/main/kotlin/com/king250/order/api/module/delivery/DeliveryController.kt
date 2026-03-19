@@ -6,6 +6,7 @@ import com.king250.order.api.common.ItemResponse
 import com.king250.order.api.util.toItem
 import com.king250.order.jooq.tables.records.DeliveryRecord
 import jakarta.validation.Valid
+import org.springdoc.core.annotations.ParameterObject
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
@@ -22,7 +23,7 @@ class DeliveryController(
     private val objectMapper: ObjectMapper
 ) {
     @GetMapping("/deliveries")
-    fun findAll(@Valid request: QueryDeliveryRequest): ItemResponse<DeliveryResponse> {
+    fun findAll(@Valid @ParameterObject request: QueryDeliveryRequest): ItemResponse<DeliveryResponse> {
         val deliveries = service.findAll(request)
         return deliveries.toItem(mapper::toResponse)
     }
