@@ -1,12 +1,13 @@
 package com.king250.order.api.config
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.type.TypeFactory
 import io.swagger.v3.core.converter.AnnotatedType
 import io.swagger.v3.core.converter.ModelConverters
+import io.swagger.v3.core.jackson.ModelResolver
 import io.swagger.v3.oas.models.Components
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.Schema
-import io.swagger.v3.oas.models.security.SecurityRequirement
 import io.swagger.v3.oas.models.security.SecurityScheme
 import org.openapitools.jackson.nullable.JsonNullable
 import org.springdoc.core.customizers.OpenApiCustomizer
@@ -16,14 +17,11 @@ import org.springframework.context.annotation.Configuration
 
 @Configuration
 class OpenApiConfig {
-
     @Bean
     fun defaultOpenAPI(): OpenAPI {
         return OpenAPI()
-            .addSecurityItem(SecurityRequirement().addList("Bearer Authentication"))
-            .components(
-                Components().addSecuritySchemes(
-                    "Bearer Authentication",
+            .components(Components()
+                .addSecuritySchemes("BearerAuth",
                     SecurityScheme()
                         .type(SecurityScheme.Type.HTTP)
                         .scheme("bearer")
@@ -33,19 +31,21 @@ class OpenApiConfig {
     }
 
     @Bean
+    fun modelResolver(objectMapper: ObjectMapper): ModelResolver {
+        return ModelResolver(objectMapper)
+    }
+
+    @Bean
     fun jsonNullablePropertyCustomizer(): PropertyCustomizer = PropertyCustomizer { schema, type ->
         val rawType = type.type ?: return@PropertyCustomizer schema
         val javaType = TypeFactory.defaultInstance().constructType(rawType)
-
         if (javaType.rawClass != JsonNullable::class.java || javaType.containedTypeCount() == 0) {
             return@PropertyCustomizer schema
         }
-
         val wrappedType = javaType.containedType(0)
         val resolved = ModelConverters.getInstance()
             .resolveAsResolvedSchema(AnnotatedType(wrappedType).resolveAsRef(false))
             .schema
-
         val unwrapped = (resolved ?: schema) as Schema<Any>
         unwrapped.nullable = true
         unwrapped.addExtension("x-json-nullable", true) // 标记给后续 required 清理
