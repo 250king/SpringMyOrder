@@ -66,10 +66,10 @@ class DeliveryService(
                     .or(DELIVERY.TRACKING_NUMBER.containsIgnoreCase(kw))
                 )
             }
-            if (auth.isAdminMember(request.userId!!)) {
-                add(DELIVERY.USER_ID.eq(request.userId))
-            } else if (request.userId != null) {
+            if (!auth.isAdmin()) {
                 add(DELIVERY.USER_ID.eq(auth.getUid()))
+            } else if (request.userId != null) {
+                add(DELIVERY.USER_ID.eq(request.userId))
             }
         }
         val sortMap = mapOf(
@@ -113,7 +113,7 @@ class DeliveryService(
             } catch (_: Exception) { }
         }
         val id = if (delivery.id == null) {
-            if (!auth.isSuperAdmin() || delivery.userId == null) {
+            if (!auth.isAdmin() || delivery.userId == null) {
                 delivery.userId = auth.getUid()
             }
             val insertedId = dsl.insertInto(DELIVERY)
@@ -131,15 +131,15 @@ class DeliveryService(
         return findById(id)
     }
 
-    suspend fun webhook(taskId: String, data: String, sign: String) {
+    fun webhook(taskId: String, data: String, sign: String) {
         if (!kd100.checkSignature(data, sign)) {
             throw AuthorizationDeniedException("Invalid signature")
         }
         try {
             val result = kd100.parseData(data)
-            val payment = withContext(Dispatchers.IO) {
-                dsl.selectFrom(DELIVERY).where(DELIVERY.TASK_ID.eq(taskId)).fetchSingle()
-            }
+            val payment = dsl.selectFrom(DELIVERY)
+                .where(DELIVERY.TASK_ID.eq(taskId))
+                .fetchSingle()
             payment.trackingNumber = result.kuaidinum
             payment.status = when(result.status) {
                 PICKED_UP -> DeliveryStatus.DELIVERED

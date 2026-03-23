@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
@@ -22,27 +23,34 @@ class DeliveryController(
     private val mapper: DeliveryMapper,
     private val objectMapper: ObjectMapper
 ) {
-    @GetMapping("/deliveries")
-    fun findAll(@Valid @ParameterObject request: QueryDeliveryRequest): ItemResponse<DeliveryResponse> {
-        val deliveries = service.findAll(request)
-        return deliveries.toItem(mapper::toResponse)
-    }
-
-    @PostMapping("/deliveries")
-    @PreAuthorize("@auth.isAdminList(#request.lists)")
+    @PostMapping("/admin/deliveries")
     @ResponseStatus(HttpStatus.CREATED)
     fun create(@Valid @RequestBody request: CreateDeliveryRequest): DeliveryResponse {
         val delivery = mapper.toEntity(request)
         return mapper.toResponse(service.save(delivery, request.addressId, request.lists))
     }
 
-    @PostMapping("/deliveries/push")
-    @PreAuthorize("@auth.isAdminDeliveries(#request.deliveries)")
+    @PostMapping("/admin/deliveries/push")
     suspend fun pushDelivery(@Valid @RequestBody request: PushDeliveryRequest): ObjectNode {
         val result = service.pushDelivery(request)
         return objectMapper.createObjectNode().apply {
             put("total", result)
         }
+    }
+
+    @GetMapping("/webhook/delivery")
+    fun webhook(
+        @RequestParam("taskId") taskId: String,
+        @RequestParam("param") param: String,
+        @RequestParam("sign") sign: String
+    ) {
+        service.webhook(taskId, param, sign)
+    }
+
+    @GetMapping("/deliveries")
+    fun findAll(@Valid @ParameterObject request: QueryDeliveryRequest): ItemResponse<DeliveryResponse> {
+        val deliveries = service.findAll(request)
+        return deliveries.toItem(mapper::toResponse)
     }
 
     @GetMapping("/deliveries/{deliveryId}")

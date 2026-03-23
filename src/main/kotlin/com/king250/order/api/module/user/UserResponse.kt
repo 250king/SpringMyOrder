@@ -13,5 +13,7 @@ data class UserResponse(
 
     val createdAt: String,
 
-    val updatedAt: String
+    val updatedAt: String,
+
+    val isAdmin: Boolean?,
 )

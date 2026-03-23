@@ -17,13 +17,7 @@ class PaymentController(
     private val mapper: PaymentMapper,
     private val objectMapper: ObjectMapper
 ) {
-    @GetMapping("/payments")
-    fun findAll(@Valid @ParameterObject request: QueryPaymentRequest): ItemResponse<PaymentResponse> {
-        val payments = service.findAll(request)
-        return payments.toItem(mapper::toResponse)
-    }
-
-    @GetMapping("/payments/webhook")
+    @GetMapping("/webhook/payments")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     suspend fun webhook(
         @RequestHeader("timestamp") timestamp: String,
@@ -31,6 +25,12 @@ class PaymentController(
         @RequestParam requestNum: String,
     ) {
         service.webhook(timestamp, token, requestNum)
+    }
+
+    @GetMapping("/payments")
+    fun findAll(@Valid @ParameterObject request: QueryPaymentRequest): ItemResponse<PaymentResponse> {
+        val payments = service.findAll(request)
+        return payments.toItem(mapper::toResponse)
     }
 
     @GetMapping("/payments/{paymentId}")

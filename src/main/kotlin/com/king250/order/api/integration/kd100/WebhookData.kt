@@ -1,6 +1,6 @@
 package com.king250.order.api.integration.kd100
 
-data class WebhookRequest(
+data class WebhookData(
     val kuaidinum: String,
 
     val status: Status,

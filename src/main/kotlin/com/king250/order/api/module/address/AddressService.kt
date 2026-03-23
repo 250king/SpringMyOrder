@@ -19,7 +19,7 @@ class AddressService(
     fun findAll(request: QueryAddressRequest): Page<AddressRecord> {
         val pageable = request.toPageable()
         val conditions = mutableListOf<Condition>().apply {
-            if (!auth.isSuperAdmin()) {
+            if (!auth.isAdmin()) {
                 add(ADDRESS.USER_ID.eq(auth.getUid()))
             } else if (request.userId != null) {
                 add(ADDRESS.USER_ID.eq(request.userId))
@@ -58,7 +58,7 @@ class AddressService(
     @Transactional
     fun save(address: AddressRecord): AddressRecord {
         if (address.id == null) {
-            if (!auth.isSuperAdmin() || address.userId == null) {
+            if (!auth.isAdmin() || address.userId == null) {
                 address.userId = auth.getUid()
             }
             return dsl.insertInto(ADDRESS)

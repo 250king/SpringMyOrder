@@ -9,7 +9,6 @@ import jakarta.validation.Valid
 import jakarta.validation.constraints.Pattern
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.http.HttpStatus
-import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 
@@ -21,23 +20,20 @@ class UserController(
     private val objectMapper: ObjectMapper,
     private val auth: AuthService
 ) {
-    @GetMapping("/users")
-    @PreAuthorize("@auth.isSuperAdmin()")
+    @GetMapping("/admin/users")
     fun findAll(@Valid @ParameterObject request: QueryUserRequest): ItemResponse<UserResponse> {
         val users = service.findAll(request)
         return users.toItem(mapper::toResponse)
     }
 
-    @PostMapping("/users")
-    @PreAuthorize("@auth.isSuperAdmin()")
+    @PostMapping("/admin/users")
     @ResponseStatus(HttpStatus.CREATED)
     fun create(@Valid @RequestBody request: CreateUserRequest): UserResponse {
         val user = mapper.toEntity(request)
         return mapper.toResponse(service.save(user))
     }
 
-    @PostMapping("/users/batch")
-    @PreAuthorize("@auth.isSuperAdmin()")
+    @PostMapping("/admin/users/batch")
     suspend fun batchCreate(@Valid @RequestBody request: BatchCreateUserRequest): ObjectNode {
         val result = service.batchCreate(request)
         return objectMapper.createObjectNode().apply {
@@ -45,8 +41,7 @@ class UserController(
         }
     }
 
-    @GetMapping("/users/nickname")
-    @PreAuthorize("@auth.isSuperAdmin()")
+    @GetMapping("/admin/users/nickname")
     suspend fun getNickname(
         @Pattern(regexp = "^[0-9]*$", message = "QQ must be numeric")
         @RequestParam
@@ -58,23 +53,20 @@ class UserController(
         }
     }
 
-    @GetMapping("/users/{userId}")
-    @PreAuthorize("@auth.isSelf(#userId)")
+    @GetMapping("/admin/users/{userId}")
     fun findById(@PathVariable userId: Long): UserResponse {
         val user = service.findById(userId)
         return mapper.toResponse(user)
     }
 
-    @PatchMapping("/users/{userId}")
-    @PreAuthorize("@auth.isSelf(#userId)")
+    @PatchMapping("/admin/users/{userId}")
     fun update(@PathVariable userId: Long, @Valid @RequestBody request: UpdateUserRequest): UserResponse {
         val user = service.findById(userId)
         mapper.updateEntity(request, user)
         return mapper.toResponse(service.save(user))
     }
 
-    @DeleteMapping("/users/{userId}")
-    @PreAuthorize("@auth.isSuperAdmin()")
+    @DeleteMapping("/admin/users/{userId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun delete(@PathVariable userId: Long) {
         service.deleteById(userId)
@@ -83,7 +75,7 @@ class UserController(
     @GetMapping("/me")
     fun getMe(): UserResponse {
         val user = service.findById(auth.getUid())
-        return mapper.toResponse(user)
+        return mapper.toResponse(user).copy(isAdmin = auth.isAdmin())
     }
 
     @PatchMapping("/me")

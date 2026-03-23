@@ -47,7 +47,7 @@ class PaymentService(
                     add(PAYMENT.PAID_AT.isNull)
                 }
             }
-            if (!auth.isAdminMember(request.userId)) {
+            if (!auth.isAdmin()) {
                 add(PAYMENT.USER_ID.eq(auth.getUid()))
             } else if (request.userId != null) {
                 add(PAYMENT.USER_ID.eq(request.userId))

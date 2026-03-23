@@ -27,7 +27,6 @@ interface GroupMapper {
     fun updateEntity(request: UpdateGroupRequest, @MappingTarget group: GroupRecord): GroupRecord
 
     @Mapping(target = "user", source = "userRecord")
-    @Mapping(target = "role", source = "groupUserRecord.role")
     @Mapping(target = "createdAt", source = "groupUserRecord.createdAt")
     fun mergeToResponse(groupUserRecord: GroupUserRecord, userRecord: UserRecord): MemberResponse
 

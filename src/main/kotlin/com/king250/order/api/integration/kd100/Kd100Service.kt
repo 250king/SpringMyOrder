@@ -38,7 +38,7 @@ class Kd100Service(
         return sign == DigestUtils.md5Hex(signStr).uppercase()
     }
 
-    fun parseData(data: String): WebhookRequest {
-        return objectMapper.readValue(data, WebhookRequest::class.java)
+    fun parseData(data: String): WebhookData {
+        return objectMapper.readValue(data, WebhookData::class.java)
     }
 }

@@ -54,7 +54,6 @@ class UserService(
             .fetchSingle()
     }
 
-    @Transactional
     suspend fun batchCreate(request: BatchCreateUserRequest): Int {
         val inserts = coroutineScope {
             request.users.toSet().map { qq ->
