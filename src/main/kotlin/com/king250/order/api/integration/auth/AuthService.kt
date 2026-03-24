@@ -23,8 +23,8 @@ class AuthService(
         if (auth == null || !auth.isAuthenticated || auth !is JwtAuthenticationToken) {
             return false
         }
-        val groups = auth.token.getClaimAsStringList("groups").orEmpty()
-        return groups.any { it == "团购管理" || it == "管理员" }
+        val groups = auth.token.getClaimAsString("scope")?.split(" ") ?: emptyList()
+        return groups.any { it == "admin:all" }
     }
 
     fun isMember(groupId: Long): Boolean {
