@@ -23,12 +23,11 @@ interface DeliveryMapper {
         return mergeToResponse(delivery, user)
     }
 
-    @Mapping(target = "user", source = "userRecord")
-    @Mapping(target = "id", source = "deliveryRecord.id")
-    @Mapping(target = "name", source = "deliveryRecord.name")
-    @Mapping(target = "createdAt", source = "deliveryRecord.createdAt")
-    @Mapping(target = "updatedAt", source = "deliveryRecord.updatedAt")
-    fun mergeToResponse(deliveryRecord: DeliveryRecord, userRecord: UserRecord): DeliveryResponse
+    @Mapping(target = "id", source = "delivery.id")
+    @Mapping(target = "name", source = "delivery.name")
+    @Mapping(target = "createdAt", source = "delivery.createdAt")
+    @Mapping(target = "updatedAt", source = "delivery.updatedAt")
+    fun mergeToResponse(delivery: DeliveryRecord, user: UserRecord): DeliveryResponse
 
     fun mapUser(record: UserRecord): UserResponse
 }

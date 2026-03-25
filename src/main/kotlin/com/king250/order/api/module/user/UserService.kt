@@ -1,25 +1,22 @@
 package com.king250.order.api.module.user
 
-import com.king250.order.api.integration.napcat.NapcatService
+import com.king250.order.api.integration.logto.LogtoService
 import com.king250.order.api.util.toJooq
 import com.king250.order.jooq.tables.records.UserRecord
 import com.king250.order.jooq.tables.references.USER
-import kotlinx.coroutines.*
+import org.apache.commons.codec.digest.DigestUtils
 import org.jooq.Condition
 import org.jooq.DSLContext
-import org.jooq.exception.NoDataFoundException
-import org.jooq.impl.DSL.*
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
-import org.springframework.http.HttpStatus
+import org.springframework.security.authorization.AuthorizationDeniedException
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
-import org.springframework.web.server.ResponseStatusException
+import java.time.Instant
 
 @Service
 class UserService(
     private val dsl: DSLContext,
-    private val napcat: NapcatService,
+    private val logto: LogtoService
 ) {
     fun findAll(request: QueryUserRequest): Page<UserRecord> {
         val pageable = request.toPageable()
@@ -28,8 +25,9 @@ class UserService(
             "id" to USER.ID,
             "name" to USER.NAME,
             "email" to USER.EMAIL,
-            "credit_score" to USER.CREDIT_SCORE,
-            "created_at" to USER.CREATED_AT
+            "creditScore" to USER.CREDIT_SCORE,
+            "createdAt" to USER.CREATED_AT,
+            "updatedAt" to USER.UPDATED_AT,
         )
         request.id?.let {
             conditions.add(USER.ID.eq(it))
@@ -51,75 +49,46 @@ class UserService(
     fun findById(id: Long): UserRecord {
         return dsl.selectFrom(USER)
             .where(USER.ID.eq(id))
+            .and(USER.DELETED_AT.isNull)
             .fetchSingle()
     }
 
-    suspend fun batchCreate(request: BatchCreateUserRequest): Int {
-        val inserts = coroutineScope {
-            request.users.toSet().map { qq ->
-                async {
-                    try {
-                        qq to getNickname(qq)
-                    } catch (_: Exception) {
-                        qq to null
-                    }
+    fun webhook(body: String, signature: String) {
+        if (!logto.checkSignature(body, signature)) {
+            throw AuthorizationDeniedException("Invalid signature")
+        }
+        val data = logto.parseData(body)
+        if (data.event == "User.Data.Updated" || data.event == "User.Created") {
+            data.data?.let {
+                if (it.customData.qq == null) {
+                    return
                 }
-            }.awaitAll().filter {
-                it.second != null
-            }.toMap().map { (qq, name) ->
-                dsl.insertInto(USER)
-                    .set(USER.NAME, name)
-                    .set(USER.QQ, qq)
-                    .onDuplicateKeyIgnore()
+                val user = dsl.selectFrom(USER)
+                    .where(USER.REFERENCE_ID.eq(it.id))
+                    .fetchOne() ?: UserRecord()
+                user.name = it.name
+                user.qq = it.customData.qq
+                user.email = if (it.primaryEmail == "${it.customData.qq}@qq.com") {
+                    null
+                } else {
+                    it.primaryEmail
+                }
+                user.store()
             }
-        }
-        return withContext(Dispatchers.IO) {
-            dsl.batch(inserts).execute()
-        }.filter {
-            it == 1
-        }.size
-    }
-
-    suspend fun getNickname(userId: String): String {
-        val name = napcat.getUserInfo(userId).data?.nick
-        if (name.isNullOrBlank()) {
-            throw ResponseStatusException(HttpStatus.NOT_FOUND, "The QQ user does not exist")
-        }
-        return name
-    }
-
-    @Transactional
-    fun save(user: UserRecord): UserRecord {
-        if (user.id == null) {
-            return dsl.insertInto(USER)
-                .set(user)
-                .returning()
-                .fetchOne()!!
-        } else {
-            dsl.attach(user)
-            user.store()
-            return user
-        }
-    }
-
-    @Transactional
-    fun deleteById(id: Long) {
-        if (dsl.fetchExists(USER.where(USER.ID.eq(id).and(USER.DELETED_AT.isNull)))) {
+        } else if (data.event == "User.Deleted") {
+            val user = dsl.selectFrom(USER)
+                .where(USER.REFERENCE_ID.eq(data.params.userId))
+                .fetchOne() ?: return
             try {
-                dsl.deleteFrom(USER)
-                    .where(USER.ID.eq(id))
-                    .execute()
+                user.delete()
             } catch (_: Exception) {
-                dsl.update(USER)
-                    .set(USER.NAME, concat(`val`("已注销_"), left(md5(USER.NAME), 8)))
-                    .set(USER.QQ, md5(USER.QQ))
-                    .set(USER.EMAIL, castNull(USER.EMAIL))
-                    .set(USER.DELETED_AT, currentInstant())
-                    .where(USER.ID.eq(id))
-                    .execute()
+                user.name = "已注销_${user.id}"
+                user.qq = DigestUtils.md5Hex(user.qq)
+                user.email = null
+                user.referenceId = null
+                user.deletedAt = Instant.now()
+                user.store()
             }
-        } else {
-            throw NoDataFoundException()
         }
     }
 }

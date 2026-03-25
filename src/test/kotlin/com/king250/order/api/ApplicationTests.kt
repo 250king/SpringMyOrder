@@ -1,9 +1,9 @@
 package com.king250.order.api
 
-import com.king250.order.api.integration.jd.JdService
-import com.king250.order.api.integration.jd.Method
-import com.king250.order.jooq.enums.PaymentMethod
-import com.king250.order.jooq.tables.references.PAYMENT
+import com.king250.order.api.integration.logto.CreateUserRequest
+import com.king250.order.api.integration.logto.CustomData
+import com.king250.order.api.integration.logto.LogtoService
+import com.king250.order.jooq.tables.references.USER
 import kotlinx.coroutines.runBlocking
 import org.jooq.DSLContext
 import org.junit.jupiter.api.Test
@@ -16,32 +16,26 @@ import org.springframework.test.context.TestConstructor
 @TestConstructor(autowireMode = TestConstructor.AutowireMode.ALL)
 class ApplicationTests(
     private val dsl: DSLContext,
-    private val jd: JdService,
+    private val logto: LogtoService
 ) {
-
     @Test
     fun contextLoads() {
-        val payments = dsl.selectFrom(PAYMENT).fetch()
-        payments.forEach { record ->
-            record.requestId?.let {
-                val result = runBlocking {
-                    jd.getOrder(it)
-                }
-                result.data?.let { data ->
-                    record.paidAt = data.completeTime
-                    record.method = when (data.payWayEnum) {
-                        Method.GUOTONG_PAY_ALIPAY -> PaymentMethod.ALIPAY
-                        Method.GUOTONG_PAY_ALIPAY_SCAN -> PaymentMethod.ALIPAY
-                        Method.GUOTONG_PAY_WX -> PaymentMethod.WECHAT
-                        Method.GUOTONG_PAY_WX_SCAN -> PaymentMethod.WECHAT
-                        Method.GUOTONG_PAY_UNIONPAY -> PaymentMethod.UNIONPAY
-                        Method.GUOTONG_PAY_UNIONPAY_SCAN -> PaymentMethod.UNIONPAY
-                        Method.GUOTONG_PAY_JD -> PaymentMethod.JDPAY
-                        Method.GUOTONG_PAY_JD_SCAN -> PaymentMethod.JDPAY
-                    }
-                    record.store()
-                }
+        val users = dsl.selectFrom(USER)
+            .where(USER.REFERENCE_ID.isNull)
+            .fetch()
+        users.forEach { user ->
+            val result = runBlocking {
+                logto.addUser(CreateUserRequest(
+                    primaryEmail = "${user.qq!!}@qq.com",
+                    name = user.name!!,
+                    avatar = "https://q1.qlogo.cn/g?b=qq&nk=${user.qq!!}&s=0",
+                    customData = CustomData(
+                        qq = user.qq!!,
+                    )
+                ))
             }
+            user.referenceId = result.id
+            user.store()
         }
     }
 

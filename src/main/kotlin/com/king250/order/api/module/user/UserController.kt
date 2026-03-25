@@ -1,23 +1,19 @@
 package com.king250.order.api.module.user
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.ObjectNode
 import com.king250.order.api.common.ItemResponse
 import com.king250.order.api.integration.auth.AuthService
 import com.king250.order.api.util.toItem
 import jakarta.validation.Valid
-import jakarta.validation.constraints.Pattern
 import org.springdoc.core.annotations.ParameterObject
-import org.springframework.http.HttpStatus
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 
+@Suppress("UastIncorrectHttpHeaderInspection")
 @RestController
 @Validated
 class UserController(
     private val service: UserService,
     private val mapper: UserMapper,
-    private val objectMapper: ObjectMapper,
     private val auth: AuthService
 ) {
     @GetMapping("/admin/users")
@@ -26,62 +22,20 @@ class UserController(
         return users.toItem(mapper::toResponse)
     }
 
-    @PostMapping("/admin/users")
-    @ResponseStatus(HttpStatus.CREATED)
-    fun create(@Valid @RequestBody request: CreateUserRequest): UserResponse {
-        val user = mapper.toEntity(request)
-        return mapper.toResponse(service.save(user))
-    }
-
-    @PostMapping("/admin/users/batch")
-    suspend fun batchCreate(@Valid @RequestBody request: BatchCreateUserRequest): ObjectNode {
-        val result = service.batchCreate(request)
-        return objectMapper.createObjectNode().apply {
-            put("total", result)
-        }
-    }
-
-    @GetMapping("/admin/users/nickname")
-    suspend fun getNickname(
-        @Pattern(regexp = "^[0-9]*$", message = "QQ must be numeric")
-        @RequestParam
-        qq: String
-    ): ObjectNode {
-        val nickname = service.getNickname(qq)
-        return objectMapper.createObjectNode().apply {
-            put("name", nickname)
-        }
-    }
-
     @GetMapping("/admin/users/{userId}")
     fun findById(@PathVariable userId: Long): UserResponse {
         val user = service.findById(userId)
         return mapper.toResponse(user)
     }
 
-    @PatchMapping("/admin/users/{userId}")
-    fun update(@PathVariable userId: Long, @Valid @RequestBody request: UpdateUserRequest): UserResponse {
-        val user = service.findById(userId)
-        mapper.updateEntity(request, user)
-        return mapper.toResponse(service.save(user))
-    }
-
-    @DeleteMapping("/admin/users/{userId}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun delete(@PathVariable userId: Long) {
-        service.deleteById(userId)
+    @PostMapping("/webhook/user")
+    fun webhook(@RequestBody body: String, @RequestHeader("logto-signature-sha-256") signature: String) {
+        service.webhook(body, signature)
     }
 
     @GetMapping("/me")
-    fun getMe(): UserResponse {
+    fun getMe(): MeResponse {
         val user = service.findById(auth.getUid())
-        return mapper.toResponse(user).copy(isAdmin = auth.isAdmin())
-    }
-
-    @PatchMapping("/me")
-    fun updateMe(@Valid @RequestBody request: UpdateUserRequest): UserResponse {
-        val user = service.findById(auth.getUid())
-        mapper.updateEntity(request, user)
-        return mapper.toResponse(service.save(user))
+        return mapper.toMeResponse(user, auth.isAdmin())
     }
 }

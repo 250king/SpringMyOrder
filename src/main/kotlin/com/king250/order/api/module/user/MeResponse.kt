@@ -1,6 +1,6 @@
 package com.king250.order.api.module.user
 
-data class UserResponse(
+data class MeResponse(
     val id: Long,
 
     val name: String,
@@ -14,4 +14,6 @@ data class UserResponse(
     val createdAt: String,
 
     val updatedAt: String,
+
+    val isAdmin: Boolean?,
 )

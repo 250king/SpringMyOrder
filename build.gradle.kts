@@ -47,6 +47,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("io.ktor:ktor-client-auth:3.4.1")
     runtimeOnly("org.postgresql:postgresql:42.7.10")
     jooqCodegen("org.postgresql:postgresql")
     kapt("org.mapstruct:mapstruct-processor:1.6.3")

@@ -1,10 +1,8 @@
 package com.king250.order.api.config
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.type.TypeFactory
 import io.swagger.v3.core.converter.AnnotatedType
 import io.swagger.v3.core.converter.ModelConverters
-import io.swagger.v3.core.jackson.ModelResolver
 import io.swagger.v3.oas.models.Components
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.media.Schema
@@ -31,11 +29,6 @@ class OpenApiConfig {
     }
 
     @Bean
-    fun modelResolver(objectMapper: ObjectMapper): ModelResolver {
-        return ModelResolver(objectMapper)
-    }
-
-    @Bean
     fun jsonNullablePropertyCustomizer(): PropertyCustomizer = PropertyCustomizer { schema, type ->
         val rawType = type.type ?: return@PropertyCustomizer schema
         val javaType = TypeFactory.defaultInstance().constructType(rawType)
@@ -48,7 +41,7 @@ class OpenApiConfig {
             .schema
         val unwrapped = (resolved ?: schema) as Schema<Any>
         unwrapped.nullable = true
-        unwrapped.addExtension("x-json-nullable", true) // 标记给后续 required 清理
+        unwrapped.addExtension("x-json-nullable", true)
         unwrapped
     }
 
@@ -57,7 +50,6 @@ class OpenApiConfig {
         openApi.components?.schemas?.values?.forEach { modelSchema ->
             val properties = modelSchema.properties ?: return@forEach
             val removeRequired = mutableSetOf<String>()
-
             properties.forEach { (name, propertySchemaAny) ->
                 val propertySchema = propertySchemaAny ?: return@forEach
                 val isJsonNullable = propertySchema.extensions?.remove("x-json-nullable") == true
@@ -66,14 +58,12 @@ class OpenApiConfig {
                     removeRequired += name
                 }
             }
-
             if (removeRequired.isNotEmpty()) {
                 modelSchema.required = modelSchema.required
                     ?.filterNot { it in removeRequired }
                     ?.ifEmpty { null }
             }
         }
-
         openApi.components?.schemas?.keys
             ?.filter { it.startsWith("JsonNullable") }
             ?.toList()

@@ -22,6 +22,7 @@ interface PaymentMapper {
     @Mapping(target = "id", source = "paymentRecord.id")
     @Mapping(target = "createdAt", source = "paymentRecord.createdAt")
     @Mapping(target = "updatedAt", source = "paymentRecord.updatedAt")
+    @Mapping(target = "referenceId", source = "paymentRecord.referenceId")
     fun mergeToResponse(paymentRecord: PaymentRecord, userRecord: UserRecord): PaymentResponse
 
     fun mapUser(record: UserRecord): UserResponse
