@@ -28,6 +28,7 @@ repositories {
 dependencies {
     implementation("commons-codec:commons-codec")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+    implementation("io.ktor:ktor-client-auth:3.4.1")
     implementation("io.ktor:ktor-client-core:3.4.1")
     implementation("io.ktor:ktor-client-okhttp:3.4.1")
     implementation("io.ktor:ktor-client-content-negotiation:3.4.1")
@@ -47,13 +48,11 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-web")
-    implementation("io.ktor:ktor-client-auth:3.4.1")
     runtimeOnly("org.postgresql:postgresql:42.7.10")
     jooqCodegen("org.postgresql:postgresql")
     kapt("org.mapstruct:mapstruct-processor:1.6.3")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 buildscript {

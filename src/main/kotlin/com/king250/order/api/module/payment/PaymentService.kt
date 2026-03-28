@@ -40,7 +40,7 @@ class PaymentService(
             request.referenceId?.let { add(PAYMENT.REFERENCE_ID.eq(it)) }
             request.currency?.let { add(PAYMENT.CURRENCY.eq(it)) }
             request.method?.let { add(PAYMENT.METHOD.eq(it)) }
-            request.isPaid?.let {
+            request.paid?.let {
                 if (it) {
                     add(PAYMENT.PAID_AT.isNotNull)
                 } else {

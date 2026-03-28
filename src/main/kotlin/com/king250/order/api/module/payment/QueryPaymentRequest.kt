@@ -15,5 +15,5 @@ class QueryPaymentRequest(
 
     var method: PaymentMethod? = null,
 
-    var isPaid: Boolean? = null,
+    var paid: Boolean? = null,
 ) : QueryRequest()

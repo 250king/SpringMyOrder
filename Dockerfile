@@ -1,5 +1,6 @@
 # 第一阶段：编译阶段 (使用 JDK)
 FROM eclipse-temurin:21-jdk-alpine AS build
+RUN apk add --no-cache libc6-compat gcompat libstdc++
 WORKDIR /app
 
 # 只拷贝 Gradle 相关文件，利用 Docker 缓存层优化下载速度
