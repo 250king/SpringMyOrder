@@ -3,6 +3,8 @@ package com.king250.order.api.module.background
 import com.king250.order.api.integration.aliyun.AliyunService
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
+import org.springframework.web.util.UriComponentsBuilder
+import java.net.URI
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
@@ -21,9 +23,13 @@ class BackgroundService(
         pool.store(Pool(mobile, desktop))
     }
 
-    fun getUrl(isMobile: Boolean): String {
+    fun toUri(url: String): URI {
+        return UriComponentsBuilder.fromUriString(url).build().toUri()
+    }
+
+    fun getUrl(isMobile: Boolean): URI {
         val list = if (isMobile) pool.load().mobile else pool.load().desktop
-        val result = list.randomOrNull() ?: return properties.default
-        return "${properties.url}$result"
+        val result = list.randomOrNull() ?: return toUri(properties.default)
+        return toUri(result)
     }
 }
