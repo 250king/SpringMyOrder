@@ -30,6 +30,6 @@ class BackgroundService(
     fun getUrl(isMobile: Boolean): URI {
         val list = if (isMobile) pool.load().mobile else pool.load().desktop
         val result = list.randomOrNull() ?: return toUri(properties.default)
-        return toUri(result)
+        return toUri("${properties.url}$result")
     }
 }
