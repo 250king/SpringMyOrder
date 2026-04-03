@@ -26,13 +26,14 @@ repositories {
 }
 
 dependencies {
-    implementation("commons-codec:commons-codec")
+    implementation("com.aliyun.oss:aliyun-sdk-oss:3.18.5")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
-    implementation("io.ktor:ktor-client-auth:3.4.1")
-    implementation("io.ktor:ktor-client-core:3.4.1")
-    implementation("io.ktor:ktor-client-okhttp:3.4.1")
-    implementation("io.ktor:ktor-client-content-negotiation:3.4.1")
-    implementation("io.ktor:ktor-serialization-jackson:3.4.1")
+    implementation("commons-codec:commons-codec")
+    implementation("io.ktor:ktor-client-auth:3.4.2")
+    implementation("io.ktor:ktor-client-core:3.4.2")
+    implementation("io.ktor:ktor-client-okhttp:3.4.2")
+    implementation("io.ktor:ktor-client-content-negotiation:3.4.2")
+    implementation("io.ktor:ktor-serialization-jackson:3.4.2")
     implementation("io.projectreactor:reactor-core")
     implementation("org.flywaydb:flyway-database-postgresql")
     implementation("org.jetbrains.kotlin:kotlin-reflect")

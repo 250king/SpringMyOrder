@@ -10,6 +10,8 @@ data class GroupResponse(
 
     val qq: String,
 
+    val image: String?,
+
     val status: GroupStatus,
 
     val deadline: Instant,

@@ -3,13 +3,13 @@ package com.king250.order.api
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan
 import org.springframework.boot.runApplication
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
+import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 
 @SpringBootApplication
-@EnableWebSecurity
-@EnableMethodSecurity
 @ConfigurationPropertiesScan
+@EnableWebSecurity
+@EnableScheduling
 class Application
 
 fun main(args: Array<String>) {

@@ -31,6 +31,7 @@ class SecurityConfig(
                 auth
                     .requestMatchers("/error/**").permitAll()
                     .requestMatchers("/webhook/**").permitAll()
+                    .requestMatchers("/_/background/**").permitAll()
                     .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                     .requestMatchers("/admin/**").access(expression)
                     .anyRequest().authenticated()
