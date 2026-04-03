@@ -15,4 +15,8 @@ data class GroupResponse(
     val status: GroupStatus,
 
     val deadline: Instant,
+
+    val createdAt: Instant,
+
+    val updatedAt: Instant,
 )

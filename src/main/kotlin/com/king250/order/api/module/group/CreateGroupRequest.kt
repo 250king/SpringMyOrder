@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
+import org.hibernate.validator.constraints.URL
 import java.time.Instant
 
 data class CreateGroupRequest(
@@ -23,6 +24,9 @@ data class CreateGroupRequest(
 
     @field:NotNull
     val ownerId: Long,
+
+    @field:URL
+    val image: String?,
 
     @field:Valid
     @field:NotEmpty
